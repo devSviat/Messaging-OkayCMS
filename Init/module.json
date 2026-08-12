@@ -1,7 +1,7 @@
 {
   "Okay": "4.5.2",
-  "version": "1.0.0",
-  "moduleName": "Messaging (SMS повідомлення)",
+  "version": "1.0.1",
+  "moduleName": "Messaging (SMS/Viber повідомлення)",
   "vendor": {
     "email": "devsviat@proton.me",
     "site": "https://github.com/devSviat"
