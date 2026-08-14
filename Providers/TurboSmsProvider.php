@@ -83,7 +83,6 @@ class TurboSmsProvider implements SmsProviderInterface
         $responseBody = curl_exec($ch);
         $httpCode = (int)curl_getinfo($ch, CURLINFO_HTTP_CODE);
         $curlError = curl_error($ch);
-        curl_close($ch);
 
         if ($curlError) {
             return ['success' => false, 'error' => 'CURL: ' . $curlError];
@@ -136,7 +135,6 @@ class TurboSmsProvider implements SmsProviderInterface
         $responseBody = curl_exec($ch);
         $httpCode = (int)curl_getinfo($ch, CURLINFO_HTTP_CODE);
         $curlError = curl_error($ch);
-        curl_close($ch);
 
         if ($curlError) {
             return ['success' => false, 'balance' => null, 'currency' => null, 'error' => 'CURL: ' . $curlError];
@@ -184,7 +182,6 @@ class TurboSmsProvider implements SmsProviderInterface
         $responseBody = curl_exec($ch);
         $httpCode = (int)curl_getinfo($ch, CURLINFO_HTTP_CODE);
         $curlError = curl_error($ch);
-        curl_close($ch);
 
         if ($curlError) {
             return ['success' => false, 'info' => [], 'error' => 'CURL: ' . $curlError];
