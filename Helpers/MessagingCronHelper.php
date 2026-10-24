@@ -15,17 +15,17 @@ use Okay\Modules\Sviat\Messaging\Services\NotificationEventService;
 /** Крон: події доставки НП → створення/відправка SMS; повтор при помилках. */
 class MessagingCronHelper
 {
-    private const NOVA_POSHTA_TRACKING_ENTITY_CLASS = 'Okay\Modules\Sviat\NovaPoshtaTracking\Entities\NovaPoshtaTrackingEntity';
+    private const string NOVA_POSHTA_TRACKING_ENTITY_CLASS = \Okay\Modules\Sviat\NovaPoshtaTracking\Entities\NovaPoshtaTrackingEntity::class;
 
-    private const STORAGE_FREE_DAYS = 7;
-    private const STORAGE_WARNING_DAY = 6;
-    private const SEC_PER_HOUR = 3600;
-    private const SEC_PER_DAY = 86400;
+    private const int STORAGE_FREE_DAYS = 7;
+    private const int STORAGE_WARNING_DAY = 6;
+    private const int SEC_PER_HOUR = 3600;
+    private const int SEC_PER_DAY = 86400;
 
-    private const SETTING_SHIPPED = 'sviat__messaging__shipped_enabled';
-    private const SETTING_ARRIVED = 'sviat__messaging__arrived_enabled';
-    private const SETTING_REMINDER_2DAY = 'sviat__messaging__reminder_2day_enabled';
-    private const SETTING_STORAGE_WARNING = 'sviat__messaging__storage_warning_enabled';
+    private const string SETTING_SHIPPED = 'sviat__messaging__shipped_enabled';
+    private const string SETTING_ARRIVED = 'sviat__messaging__arrived_enabled';
+    private const string SETTING_REMINDER_2DAY = 'sviat__messaging__reminder_2day_enabled';
+    private const string SETTING_STORAGE_WARNING = 'sviat__messaging__storage_warning_enabled';
 
     private $entityFactory;
     private $eventService;

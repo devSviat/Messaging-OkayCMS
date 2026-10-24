@@ -13,8 +13,8 @@ use Okay\Modules\Sviat\Messaging\Services\NotificationEventService;
 /** Налаштування провайдера SMS та типів повідомлень; баланс і приблизна к-сть SMS. */
 class MessagingAdmin extends IndexAdmin
 {
-    private const TURBOSMS_PRICE_PER_SMS = 1.29;
-    private const SMSCLUB_PRICE_PER_SMS = 1.29;
+    private const float TURBOSMS_PRICE_PER_SMS = 1.29;
+    private const float SMSCLUB_PRICE_PER_SMS = 1.29;
 
     public function fetch(SmsClubProvider $smsClubProvider, TurboSmsProvider $turbosmsProvider, EntityFactory $entityFactory)
     {

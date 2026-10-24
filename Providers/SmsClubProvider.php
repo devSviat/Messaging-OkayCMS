@@ -7,11 +7,11 @@ use Okay\Core\Settings;
 /** SMS Club API (Bearer token): send, balance, status, originators. */
 class SmsClubProvider implements SmsProviderInterface
 {
-    private const API_BASE = 'https://im.smsclub.mobi/sms';
-    private const API_SEND = self::API_BASE . '/send';
-    private const API_BALANCE = self::API_BASE . '/balance';
-    private const API_STATUS = self::API_BASE . '/status';
-    private const API_ORIGINATOR = self::API_BASE . '/originator';
+    private const string API_BASE = 'https://im.smsclub.mobi/sms';
+    private const string API_SEND = self::API_BASE . '/send';
+    private const string API_BALANCE = self::API_BASE . '/balance';
+    private const string API_STATUS = self::API_BASE . '/status';
+    private const string API_ORIGINATOR = self::API_BASE . '/originator';
 
     private $settings;
 
