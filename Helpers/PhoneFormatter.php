@@ -5,7 +5,7 @@ namespace Okay\Modules\Sviat\Messaging\Helpers;
 /** Формат і валідація номера для SMS (UA, E.164). */
 class PhoneFormatter
 {
-    private const MIN_DIGITS = 9;
+    private const int MIN_DIGITS = 9;
 
     public static function format(string $phone): ?string
     {
@@ -23,7 +23,7 @@ class PhoneFormatter
                 return null;
             }
             return $phoneUtil->format($parsed, \libphonenumber\PhoneNumberFormat::E164);
-        } catch (\Exception $e) {
+        } catch (\Exception) {
             return null;
         }
     }
