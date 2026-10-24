@@ -123,7 +123,7 @@ class NotificationEventService
         try {
             $npData = $this->entityFactory->get(NPCostDeliveryDataEntity::class)->findOne(['order_id' => $order->id]);
             return $npData && !empty($npData->control_payment);
-        } catch (\Throwable $e) {
+        } catch (\Throwable) {
             return false;
         }
     }

@@ -16,7 +16,7 @@ class DeliveryStatusMapping
     public const EVENT_RECEIVED = 'received';
 
     /** Код НП => [system_status, event]. В дорозі: 4,41,5,6,101. Прибуло: 7,8. Отримано: 9,10,11. */
-    private const NOVA_POSHTA_MAP = [
+    private const array NOVA_POSHTA_MAP = [
         '4' => [self::SYSTEM_IN_TRANSIT, self::EVENT_SHIPPED],
         '41' => [self::SYSTEM_IN_TRANSIT, self::EVENT_SHIPPED],
         '5' => [self::SYSTEM_IN_TRANSIT, self::EVENT_SHIPPED],
@@ -29,9 +29,9 @@ class DeliveryStatusMapping
         '11' => [self::SYSTEM_RECEIVED, self::EVENT_RECEIVED],
     ];
 
-    private const NP_IN_TRANSIT = ['4' => true, '41' => true, '5' => true, '6' => true, '101' => true];
-    private const NP_ARRIVED = ['7' => true, '8' => true];
-    private const NP_RECEIVED = ['9' => true, '10' => true, '11' => true];
+    private const array NP_IN_TRANSIT = ['4' => true, '41' => true, '5' => true, '6' => true, '101' => true];
+    private const array NP_ARRIVED = ['7' => true, '8' => true];
+    private const array NP_RECEIVED = ['9' => true, '10' => true, '11' => true];
 
     /** Статуси, для яких не створюємо події: отримано, видалено, відмова, повернення, тощо. */
     public const NP_FINAL_STATUSES = ['2', '3', '9', '10', '11', '102', '103', '105', '106'];

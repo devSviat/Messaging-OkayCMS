@@ -7,7 +7,7 @@ use Okay\Modules\Sviat\Messaging\Services\NotificationEventService;
 /** Тексти SMS за типами подій. */
 class MessageTemplates
 {
-    private const DEFAULT_PARAMS = [
+    private const array DEFAULT_PARAMS = [
         'doc_number' => '',
         'order_id' => '',
         'warehouse' => '',

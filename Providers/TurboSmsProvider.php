@@ -7,10 +7,10 @@ use Okay\Core\Settings;
 /** TurboSMS API (Bearer token): send, balance, status. */
 class TurboSmsProvider implements SmsProviderInterface
 {
-    private const API_BASE = 'https://api.turbosms.ua';
-    private const API_SEND_URL = self::API_BASE . '/message/send.json';
-    private const API_STATUS_URL = self::API_BASE . '/message/status.json';
-    private const API_BALANCE_URL = self::API_BASE . '/user/balance.json';
+    private const string API_BASE = 'https://api.turbosms.ua';
+    private const string API_SEND_URL = self::API_BASE . '/message/send.json';
+    private const string API_STATUS_URL = self::API_BASE . '/message/status.json';
+    private const string API_BALANCE_URL = self::API_BASE . '/user/balance.json';
 
     private $settings;
 
