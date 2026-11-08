@@ -76,7 +76,7 @@ class NovaPoshtaShipmentsTest extends TestCase
 
             public function unfinished(): array
             {
-                return $this->byOrder;
+                return array_filter($this->byOrder, static fn(object $s): bool => !in_array($s->statusCode, [2, 9, 11, 102, 103, 106], true));
             }
 
             public function shipments(array $orderIds): array
@@ -133,8 +133,19 @@ class NovaPoshtaShipmentsTest extends TestCase
         ];
         $active = $this->source(true, true, [self::shipment(101, 7, '2026-11-05 10:00:00', false)], $old)->active();
 
-        self::assertSame([101, 202], array_keys($active));
+        $keys = array_keys($active);
+        sort($keys);
+        self::assertSame([101, 202], $keys);
         self::assertSame('2045000000101', $active[101]->int_doc_number);
+    }
+
+    /** Накладна вже отримана в новому модулі, а старий трекінг відстав: нагадувати нема про що. */
+    public function testFinalNewWaybillHidesStaleOldRow(): void
+    {
+        $old = [(object)['order_id' => 101, 'int_doc_number' => '20450000000101', 'status_code' => '7', 'actual_delivery_at' => '2026-11-01 10:00:00']];
+        $active = $this->source(true, true, [self::shipment(101, 9, null, true)], $old)->active();
+
+        self::assertArrayNotHasKey(101, $active);
     }
 
     public function testDisabledOldModuleIsNotRead(): void

@@ -47,7 +47,12 @@ final class NovaPoshtaShipments
             }
         }
         if ($this->newActive()) {
-            foreach (($this->npOrders)()->unfinished() as $shipment) {
+            $npOrders = ($this->npOrders)();
+            // Накладна в новому модулі перекриває стару й тоді, коли вона вже фінальна, а старий трекінг відстав.
+            if ($result !== []) {
+                $result = array_diff_key($result, $npOrders->shipments(array_keys($result)));
+            }
+            foreach ($npOrders->unfinished() as $shipment) {
                 $result[(int)$shipment->orderId] = self::fromNew($shipment);
             }
         }
