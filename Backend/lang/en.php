@@ -34,5 +34,5 @@ $lang['sviat_messaging_smsclub_api_data'] = 'Data from API (get_balance, get_ori
 $lang['sviat_messaging_smsclub_status_empty'] = 'No SMS sent yet. Statuses are updated via API get_status.';
 $lang['sviat_messaging_example_title'] = 'Example message';
 $lang['sviat_messaging_example_chars'] = 'Characters';
-$lang['sviat_messaging_np_tracking_required_title'] = 'Nova Poshta Tracking module required';
-$lang['sviat_messaging_np_tracking_required_description'] = 'The Messaging module requires the Sviat/NovaPoshtaTracking module (Okay/Modules/Sviat/NovaPoshtaTracking) to be installed and configured. It updates Nova Poshta shipment statuses, which triggers SMS notifications for shipped, arrived and reminder events.';
+$lang['sviat_messaging_np_tracking_required_title'] = 'Nova Poshta module required';
+$lang['sviat_messaging_np_tracking_required_description'] = 'The Messaging module requires the Nova Poshta module (Sviat/NovaPoshta) or the old Sviat/NovaPoshtaTracking to be installed and configured. It updates Nova Poshta shipment statuses, which triggers SMS notifications for shipped, arrived and reminder events.';

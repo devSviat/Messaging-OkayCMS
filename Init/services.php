@@ -7,6 +7,8 @@ use Okay\Core\OkayContainer\Reference\ServiceReference as SR;
 use Okay\Core\Settings;
 use Okay\Modules\Sviat\Messaging\Backend\Controllers\MessagingAdmin;
 use Okay\Modules\Sviat\Messaging\Helpers\MessagingCronHelper;
+use Okay\Modules\Sviat\Messaging\Helpers\NovaPoshtaShipments;
+use Okay\Core\Modules\Modules;
 use Okay\Modules\Sviat\Messaging\Providers\SmsClubProvider;
 use Okay\Modules\Sviat\Messaging\Providers\SmsProviderFactory;
 use Okay\Modules\Sviat\Messaging\Providers\TurboSmsProvider;
@@ -21,11 +23,19 @@ return [
             new SR(EntityFactory::class),
         ],
     ],
+    NovaPoshtaShipments::class => [
+        'class' => NovaPoshtaShipments::class,
+        'arguments' => [
+            new SR(Modules::class),
+            new SR(EntityFactory::class),
+        ],
+    ],
     NotificationEventService::class => [
         'class' => NotificationEventService::class,
         'arguments' => [
             new SR(EntityFactory::class),
             new SR(Settings::class),
+            new SR(NovaPoshtaShipments::class),
         ],
     ],
     TurboSmsProvider::class => [
@@ -55,6 +65,7 @@ return [
             new SR(NotificationEventService::class),
             new SR(SmsProviderFactory::class),
             new SR(Settings::class),
+            new SR(NovaPoshtaShipments::class),
         ],
     ],
 ];

@@ -4,9 +4,9 @@ namespace Okay\Modules\Sviat\Messaging\Services;
 
 use Okay\Core\EntityFactory;
 use Okay\Core\Settings;
-use Okay\Modules\OkayCMS\NovaposhtaCost\Entities\NPCostDeliveryDataEntity;
 use Okay\Modules\Sviat\Messaging\Entities\NotificationLogEntity;
 use Okay\Modules\Sviat\Messaging\Helpers\DeliveryStatusMapping;
+use Okay\Modules\Sviat\Messaging\Helpers\NovaPoshtaShipments;
 use Okay\Modules\Sviat\Messaging\Helpers\PhoneFormatter;
 
 /** Події для SMS: event_key, перевірка дубля та антиспаму. */
@@ -30,7 +30,7 @@ class NotificationEventService
     private $entityFactory;
     private $settings;
 
-    public function __construct(EntityFactory $entityFactory, Settings $settings)
+    public function __construct(EntityFactory $entityFactory, Settings $settings, private readonly NovaPoshtaShipments $shipments)
     {
         $this->entityFactory = $entityFactory;
         $this->settings = $settings;
@@ -114,18 +114,10 @@ class NotificationEventService
         return 'ok';
     }
 
-    /** Потребує модуль OkayCMS NovaposhtaCost. */
+    /** Отримувач платить при отриманні: будь-яка післяплата модуля Нова Пошта або контроль оплати старого. */
     public function isCashOnDelivery(object $order): bool
     {
-        if (!class_exists(NPCostDeliveryDataEntity::class)) {
-            return false;
-        }
-        try {
-            $npData = $this->entityFactory->get(NPCostDeliveryDataEntity::class)->findOne(['order_id' => $order->id]);
-            return $npData && !empty($npData->control_payment);
-        } catch (\Throwable) {
-            return false;
-        }
+        return (bool)($this->shipments->forOrder((int)($order->id ?? 0))?->cod ?? false);
     }
 
     public function isHighValueOrder(object $order, float $threshold = 1000.0): bool

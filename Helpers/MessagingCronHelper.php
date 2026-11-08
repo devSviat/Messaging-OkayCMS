@@ -6,7 +6,6 @@ use Okay\Core\EntityFactory;
 use Okay\Core\Settings;
 use Okay\Entities\DeliveriesEntity;
 use Okay\Entities\OrdersEntity;
-use Okay\Modules\OkayCMS\NovaposhtaCost\Entities\NPCostDeliveryDataEntity;
 use Okay\Modules\Sviat\Messaging\Entities\NotificationLogEntity;
 use Okay\Modules\Sviat\Messaging\Providers\SmsProviderFactory;
 use Okay\Modules\Sviat\Messaging\Providers\SmsProviderInterface;
@@ -15,8 +14,6 @@ use Okay\Modules\Sviat\Messaging\Services\NotificationEventService;
 /** Крон: події доставки НП → створення/відправка SMS; повтор при помилках. */
 class MessagingCronHelper
 {
-    private const string NOVA_POSHTA_TRACKING_ENTITY_CLASS = \Okay\Modules\Sviat\NovaPoshtaTracking\Entities\NovaPoshtaTrackingEntity::class;
-
     private const int STORAGE_FREE_DAYS = 7;
     private const int STORAGE_WARNING_DAY = 6;
     private const int SEC_PER_HOUR = 3600;
@@ -36,7 +33,8 @@ class MessagingCronHelper
         EntityFactory $entityFactory,
         NotificationEventService $eventService,
         SmsProviderFactory $providerFactory,
-        Settings $settings
+        Settings $settings,
+        private readonly NovaPoshtaShipments $shipments
     ) {
         $this->entityFactory = $entityFactory;
         $this->eventService = $eventService;
@@ -54,31 +52,20 @@ class MessagingCronHelper
         $stats = ['events_created' => 0, 'sent' => 0, 'errors' => 0, 'skipped' => 0];
 
         $trackingByOrderId = [];
-        if (class_exists(self::NOVA_POSHTA_TRACKING_ENTITY_CLASS)) {
-            $trackingEntity = $this->entityFactory->get(self::NOVA_POSHTA_TRACKING_ENTITY_CLASS);
-            $allTracking = $trackingEntity->find();
-            foreach ($allTracking as $t) {
-                if (empty($t->int_doc_number)) {
-                    continue;
-                }
-                $rawSc = $t->status_code ?? '';
-                $statusCodeForFilter = ($rawSc !== '' && $rawSc !== null) ? (string)(int)$rawSc : '';
-                if ($statusCodeForFilter !== '' && DeliveryStatusMapping::isNovaPoshtaFinalStatus($statusCodeForFilter)) {
-                    continue;
-                }
-                $trackingByOrderId[$t->order_id] = $t;
+        foreach ($this->shipments->active() as $orderId => $t) {
+            if ($t->status_code !== '' && DeliveryStatusMapping::isNovaPoshtaFinalStatus($t->status_code)) {
+                continue;
             }
+            $trackingByOrderId[$orderId] = $t;
         }
 
         $ordersEntity = $this->entityFactory->get(OrdersEntity::class);
         $deliveriesEntity = $this->entityFactory->get(DeliveriesEntity::class);
-        $npDataEntity = class_exists(NPCostDeliveryDataEntity::class)
-            ? $this->entityFactory->get(NPCostDeliveryDataEntity::class)
-            : null;
 
         if ($trackingByOrderId !== []) {
             $orderIds = array_keys($trackingByOrderId);
-            $orders = $ordersEntity->find(['id' => $orderIds]);
+            // Без ліміту сутність віддала б лише 100 замовлень, а накладних у дорозі буває більше.
+            $orders = $ordersEntity->find(['id' => $orderIds, 'limit' => count($orderIds)]);
             $ordersById = [];
             foreach ($orders as $o) {
                 $ordersById[$o->id] = $o;
@@ -89,14 +76,6 @@ class MessagingCronHelper
             $deliveriesById = [];
             foreach ($deliveries as $d) {
                 $deliveriesById[$d->id] = $d;
-            }
-
-            $npDataByOrderId = [];
-            if ($npDataEntity) {
-                $npDataList = $npDataEntity->find(['order_id' => $orderIds]);
-                foreach ($npDataList as $np) {
-                    $npDataByOrderId[$np->order_id] = $np;
-                }
             }
 
             $smsProvider = $this->getSmsProvider();
@@ -116,8 +95,7 @@ class MessagingCronHelper
                     continue;
                 }
 
-                $npData = $npDataByOrderId[$orderId] ?? null;
-                $isCashOnDelivery = $npData && !empty($npData->control_payment);
+                $isCashOnDelivery = $tracking->cod;
                 $isHighValue = $this->eventService->isHighValueOrder($order, 1000);
 
                 $docNumber = $tracking->int_doc_number ?? '';
