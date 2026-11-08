@@ -86,12 +86,12 @@ final class NovaPoshtaShipments
 
     private static function fromOld(object $t, bool $cod): object
     {
-        $code = $t->status_code ?? '';
+        $code = (string)($t->status_code ?? '');
 
         return (object)[
             'order_id' => (int)$t->order_id,
             'int_doc_number' => (string)$t->int_doc_number,
-            'status_code' => ($code !== '' && $code !== null) ? (string)(int)$code : '',
+            'status_code' => $code !== '' ? (string)(int)$code : '',
             'actual_delivery_at' => $t->actual_delivery_at ?? null,
             'cod' => $cod,
         ];

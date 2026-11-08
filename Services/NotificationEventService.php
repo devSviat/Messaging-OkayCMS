@@ -117,7 +117,7 @@ class NotificationEventService
     /** Отримувач платить при отриманні: будь-яка післяплата модуля Нова Пошта або контроль оплати старого. */
     public function isCashOnDelivery(object $order): bool
     {
-        return (bool)($this->shipments->forOrder((int)($order->id ?? 0))?->cod ?? false);
+        return (bool)($this->shipments->forOrder((int)($order->id ?? 0))->cod ?? false);
     }
 
     public function isHighValueOrder(object $order, float $threshold = 1000.0): bool
