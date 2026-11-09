@@ -4,8 +4,8 @@ namespace Okay\Modules\Sviat\Messaging\Backend\Controllers;
 
 use Okay\Admin\Controllers\IndexAdmin;
 use Okay\Core\EntityFactory;
-use Okay\Entities\ModulesEntity;
 use Okay\Modules\Sviat\Messaging\Helpers\MessageTemplates;
+use Okay\Modules\Sviat\Messaging\Helpers\NovaPoshtaShipments;
 use Okay\Modules\Sviat\Messaging\Providers\SmsClubProvider;
 use Okay\Modules\Sviat\Messaging\Providers\TurboSmsProvider;
 use Okay\Modules\Sviat\Messaging\Services\NotificationEventService;
@@ -16,7 +16,7 @@ class MessagingAdmin extends IndexAdmin
     private const float TURBOSMS_PRICE_PER_SMS = 1.29;
     private const float SMSCLUB_PRICE_PER_SMS = 1.29;
 
-    public function fetch(SmsClubProvider $smsClubProvider, TurboSmsProvider $turbosmsProvider, EntityFactory $entityFactory)
+    public function fetch(SmsClubProvider $smsClubProvider, TurboSmsProvider $turbosmsProvider, EntityFactory $entityFactory, NovaPoshtaShipments $npShipments)
     {
         if ($this->request->method('post')) {
             $this->settings->set('sviat__messaging__provider', $this->request->post('provider') === 'smsclub' ? 'smsclub' : 'turbosms');
@@ -46,10 +46,7 @@ class MessagingAdmin extends IndexAdmin
         $this->design->assign('reminder_2day_enabled', (bool)$this->settings->get('sviat__messaging__reminder_2day_enabled'));
         $this->design->assign('storage_warning_enabled', (bool)$this->settings->get('sviat__messaging__storage_warning_enabled'));
 
-        $modulesEntity = $entityFactory->get(ModulesEntity::class);
-        $novaPoshtaTrackingModule = $modulesEntity->getByVendorModuleName('Sviat', 'NovaPoshtaTracking');
-        $isNovaPoshtaTrackingInstalled = !empty($novaPoshtaTrackingModule) && $novaPoshtaTrackingModule->enabled;
-        $this->design->assign('is_nova_poshta_tracking_installed', $isNovaPoshtaTrackingInstalled);
+        $this->design->assign('is_nova_poshta_tracking_installed', $npShipments->available());
 
         $sampleDocNumber = '20451329330540';
         $this->design->assign('example_shipped_message', MessageTemplates::getMessage(NotificationEventService::TYPE_SHIPPED, ['doc_number' => $sampleDocNumber, 'order_id' => 12345]));

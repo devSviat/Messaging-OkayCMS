@@ -34,5 +34,5 @@ $lang['sviat_messaging_smsclub_api_data'] = 'Дані з API (get_balance, get_o
 $lang['sviat_messaging_smsclub_status_empty'] = 'Поки немає відправлених SMS. Статуси оновлюються через API get_status.';
 $lang['sviat_messaging_example_title'] = 'Приклад повідомлення';
 $lang['sviat_messaging_example_chars'] = 'Символів';
-$lang['sviat_messaging_np_tracking_required_title'] = 'Потрібен модуль Nova Poshta Tracking';
-$lang['sviat_messaging_np_tracking_required_description'] = 'Для роботи модуля SMS/Повідомлення має бути встановлений та налаштований модуль Sviat/NovaPoshtaTracking (Okay/Modules/Sviat/NovaPoshtaTracking). Він оновлює статуси накладних Нової Пошти, завдяки чому відправляються SMS про відправлення, прибуття та нагадування.';
+$lang['sviat_messaging_np_tracking_required_title'] = 'Потрібен модуль Нова Пошта';
+$lang['sviat_messaging_np_tracking_required_description'] = 'Для роботи модуля SMS/Повідомлення має бути встановлений та налаштований модуль Нова Пошта (Sviat/NovaPoshta) або старий Sviat/NovaPoshtaTracking. Він оновлює статуси накладних Нової Пошти, завдяки чому відправляються SMS про відправлення, прибуття та нагадування.';
