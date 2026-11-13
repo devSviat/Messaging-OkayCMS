@@ -36,3 +36,6 @@ $lang['sviat_messaging_example_title'] = 'Example message';
 $lang['sviat_messaging_example_chars'] = 'Characters';
 $lang['sviat_messaging_np_tracking_required_title'] = 'Nova Poshta module required';
 $lang['sviat_messaging_np_tracking_required_description'] = 'The Messaging module requires the Nova Poshta module (Sviat/NovaPoshta) or the old Sviat/NovaPoshtaTracking to be installed and configured. It updates Nova Poshta shipment statuses, which triggers SMS notifications for shipped, arrived and reminder events.';
+$lang['sviat_messaging_token_keep'] = 'A token is saved. Leave the field empty to keep it';
+$lang['sviat_messaging_token_empty'] = 'No token set yet';
+$lang['sviat_messaging_token_clear'] = 'Delete the saved token';
