@@ -36,3 +36,6 @@ $lang['sviat_messaging_example_title'] = 'Пример сообщения';
 $lang['sviat_messaging_example_chars'] = 'Символов';
 $lang['sviat_messaging_np_tracking_required_title'] = 'Требуется модуль Нова Пошта';
 $lang['sviat_messaging_np_tracking_required_description'] = 'Для работы модуля SMS/Сообщения должен быть установлен и настроен модуль Нова Пошта (Sviat/NovaPoshta) или старый Sviat/NovaPoshtaTracking. Он обновляет статусы накладных Новой Почты, благодаря чему отправляются SMS об отправке, прибытии и напоминаниях.';
+$lang['sviat_messaging_token_keep'] = 'Токен сохранён. Оставьте поле пустым, чтобы не менять его';
+$lang['sviat_messaging_token_empty'] = 'Токен ещё не задан';
+$lang['sviat_messaging_token_clear'] = 'Удалить сохранённый токен';

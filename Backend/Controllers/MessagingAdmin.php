@@ -6,6 +6,7 @@ use Okay\Admin\Controllers\IndexAdmin;
 use Okay\Core\EntityFactory;
 use Okay\Modules\Sviat\Messaging\Helpers\MessageTemplates;
 use Okay\Modules\Sviat\Messaging\Helpers\NovaPoshtaShipments;
+use Okay\Modules\Sviat\Messaging\Helpers\SecretSetting;
 use Okay\Modules\Sviat\Messaging\Providers\SmsClubProvider;
 use Okay\Modules\Sviat\Messaging\Providers\TurboSmsProvider;
 use Okay\Modules\Sviat\Messaging\Services\NotificationEventService;
@@ -20,9 +21,17 @@ class MessagingAdmin extends IndexAdmin
     {
         if ($this->request->method('post')) {
             $this->settings->set('sviat__messaging__provider', $this->request->post('provider') === 'smsclub' ? 'smsclub' : 'turbosms');
-            $this->settings->set('sviat__messaging__turbosms_token', $this->request->post('turbosms_token'));
+            $this->settings->set('sviat__messaging__turbosms_token', SecretSetting::next(
+                $this->settings->get('sviat__messaging__turbosms_token'),
+                $this->request->post('turbosms_token'),
+                $this->request->post('clear_turbosms_token')
+            ));
             $this->settings->set('sviat__messaging__turbosms_sender', $this->request->post('turbosms_sender'));
-            $this->settings->set('sviat__messaging__smsclub_token', $this->request->post('smsclub_token'));
+            $this->settings->set('sviat__messaging__smsclub_token', SecretSetting::next(
+                $this->settings->get('sviat__messaging__smsclub_token'),
+                $this->request->post('smsclub_token'),
+                $this->request->post('clear_smsclub_token')
+            ));
             $this->settings->set('sviat__messaging__smsclub_src_addr', $this->request->post('smsclub_src_addr'));
 
             $this->settings->set('sviat__messaging__shipped_enabled', $this->request->post('shipped_enabled', 'boolean') ? 1 : 0);
@@ -36,9 +45,9 @@ class MessagingAdmin extends IndexAdmin
 
         $provider = $this->settings->get('sviat__messaging__provider') ?: 'turbosms';
         $this->design->assign('provider', $provider);
-        $this->design->assign('turbosms_token', $this->settings->get('sviat__messaging__turbosms_token'));
+        $this->design->assign('turbosms_token_is_set', (string) $this->settings->get('sviat__messaging__turbosms_token') !== '');
         $this->design->assign('turbosms_sender', $this->settings->get('sviat__messaging__turbosms_sender'));
-        $this->design->assign('smsclub_token', $this->settings->get('sviat__messaging__smsclub_token'));
+        $this->design->assign('smsclub_token_is_set', (string) $this->settings->get('sviat__messaging__smsclub_token') !== '');
         $this->design->assign('smsclub_src_addr', $this->settings->get('sviat__messaging__smsclub_src_addr'));
 
         $this->design->assign('shipped_enabled', (bool)$this->settings->get('sviat__messaging__shipped_enabled'));

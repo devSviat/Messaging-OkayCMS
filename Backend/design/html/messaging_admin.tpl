@@ -60,7 +60,10 @@
                                 {include file='svg_icon.tpl' svgId='icon_tooltips'}
                             </i>
                         </div>
-                        <input type="text" name="turbosms_token" class="form-control mb-1" value="{$turbosms_token|escape}" placeholder="токен з особистого кабінету TurboSMS">
+                        <input type="password" name="turbosms_token" class="form-control mb-1" value="" autocomplete="new-password" placeholder="{if $turbosms_token_is_set}{$btr->sviat_messaging_token_keep|escape}{else}{$btr->sviat_messaging_token_empty|escape}{/if}">
+                        {if $turbosms_token_is_set}
+                            <label class="mb-1"><input type="checkbox" name="clear_turbosms_token" value="1"> {$btr->sviat_messaging_token_clear|escape}</label>
+                        {/if}
                         <div class="heading_label">
                             <span>{$btr->sviat_messaging_turbosms_sender|escape}</span>
                         </div>
@@ -86,7 +89,10 @@
                                 {include file='svg_icon.tpl' svgId='icon_tooltips'}
                             </i>
                         </div>
-                        <input type="text" name="smsclub_token" class="form-control mb-1" value="{$smsclub_token|escape}" placeholder="Bearer токен з профілю SMS Club">
+                        <input type="password" name="smsclub_token" class="form-control mb-1" value="" autocomplete="new-password" placeholder="{if $smsclub_token_is_set}{$btr->sviat_messaging_token_keep|escape}{else}{$btr->sviat_messaging_token_empty|escape}{/if}">
+                        {if $smsclub_token_is_set}
+                            <label class="mb-1"><input type="checkbox" name="clear_smsclub_token" value="1"> {$btr->sviat_messaging_token_clear|escape}</label>
+                        {/if}
                         <div class="heading_label">
                             <span>{$btr->sviat_messaging_smsclub_src_addr|escape}</span>
                         </div>
