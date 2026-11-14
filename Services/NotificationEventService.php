@@ -4,9 +4,11 @@ namespace Okay\Modules\Sviat\Messaging\Services;
 
 use Okay\Core\EntityFactory;
 use Okay\Core\Settings;
+use Okay\Modules\Sviat\Messaging\Carriers\Carrier;
+use Okay\Modules\Sviat\Messaging\Carriers\CarrierShipment;
+use Okay\Modules\Sviat\Messaging\Carriers\CarrierShipments;
+use Okay\Modules\Sviat\Messaging\Carriers\ShipmentEvent;
 use Okay\Modules\Sviat\Messaging\Entities\NotificationLogEntity;
-use Okay\Modules\Sviat\Messaging\Helpers\DeliveryStatusMapping;
-use Okay\Modules\Sviat\Messaging\Helpers\NovaPoshtaShipments;
 use Okay\Modules\Sviat\Messaging\Helpers\PhoneFormatter;
 
 /** Події для SMS: event_key, перевірка дубля та антиспаму. */
@@ -30,15 +32,24 @@ class NotificationEventService
     private $entityFactory;
     private $settings;
 
-    public function __construct(EntityFactory $entityFactory, Settings $settings, private readonly NovaPoshtaShipments $shipments)
+    public function __construct(EntityFactory $entityFactory, Settings $settings, private readonly CarrierShipments $shipments)
     {
         $this->entityFactory = $entityFactory;
         $this->settings = $settings;
     }
 
-    public function buildEventKey(int $orderId, string $type): string
+    /**
+     * Ключ інших перевізників містить перевізника й номер: після зміни перевізника нова посилка отримує свої SMS.
+     * Ключі Нової Пошти лишаються без них, інакше після оновлення посилки в дорозі отримали б SMS повторно.
+     */
+    public function buildEventKey(int $orderId, string $type, ?CarrierShipment $shipment = null): string
     {
-        return 'order_' . $orderId . '_' . $type;
+        $key = 'order_' . $orderId . '_' . $type;
+        if ($shipment === null || $shipment->carrier === Carrier::NovaPoshta) {
+            return $key;
+        }
+
+        return $key . '_' . $shipment->carrier->value . '_' . $shipment->number;
     }
 
     public function hasEventAlreadyBeenSent(string $eventKey): bool
@@ -73,15 +84,15 @@ class NotificationEventService
         return false;
     }
 
-    public function isOrderEligibleForSms(object $order, ?object $tracking, ?object $delivery): bool
+    public function isOrderEligibleForSms(object $order, ?CarrierShipment $shipment, ?object $delivery): bool
     {
         if (!$order || empty($order->phone)) {
             return false;
         }
-        if ($tracking && DeliveryStatusMapping::isNovaPoshtaReceived($tracking->status_code ?? '')) {
+        if ($shipment?->event === ShipmentEvent::Received) {
             return false;
         }
-        if (!$tracking || empty($tracking->int_doc_number)) {
+        if (!$shipment || $shipment->number === '') {
             return false;
         }
         if ($delivery) {
@@ -94,15 +105,15 @@ class NotificationEventService
     }
 
     /** Причина, чому замовлення не підходить для SMS (для логу). Повертає 'ok' якщо підходить. */
-    public function getOrderEligibilityReason(object $order, ?object $tracking, ?object $delivery): string
+    public function getOrderEligibilityReason(object $order, ?CarrierShipment $shipment, ?object $delivery): string
     {
         if (!$order || empty($order->phone)) {
             return 'no_phone';
         }
-        if ($tracking && DeliveryStatusMapping::isNovaPoshtaReceived((string)(int)($tracking->status_code ?? ''))) {
+        if ($shipment?->event === ShipmentEvent::Received) {
             return 'tracking_received';
         }
-        if (!$tracking || empty($tracking->int_doc_number)) {
+        if (!$shipment || $shipment->number === '') {
             return 'no_tracking_or_doc';
         }
         if ($delivery) {
@@ -114,7 +125,7 @@ class NotificationEventService
         return 'ok';
     }
 
-    /** Отримувач платить при отриманні: будь-яка післяплата модуля Нова Пошта або контроль оплати старого. */
+    /** Отримувач платить при отриманні: будь-яка післяплата перевізника або контроль оплати старого модуля НП. */
     public function isCashOnDelivery(object $order): bool
     {
         return (bool)($this->shipments->forOrder((int)($order->id ?? 0))->cod ?? false);

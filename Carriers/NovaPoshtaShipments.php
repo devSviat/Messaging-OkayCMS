@@ -1,11 +1,12 @@
 <?php
 
-namespace Okay\Modules\Sviat\Messaging\Helpers;
+namespace Okay\Modules\Sviat\Messaging\Carriers;
 
 use Closure;
 use Okay\Core\EntityFactory;
 use Okay\Core\Modules\Modules;
 use Okay\Core\ServiceLocator;
+use Okay\Modules\Sviat\Messaging\Helpers\DeliveryStatusMapping;
 use Okay\Modules\OkayCMS\NovaposhtaCost\Entities\NPCostDeliveryDataEntity;
 use Okay\Modules\Sviat\NovaPoshta\Integration\NpOrders;
 use Okay\Modules\Sviat\NovaPoshtaTracking\Entities\NovaPoshtaTrackingEntity;
@@ -13,11 +14,8 @@ use Okay\Modules\Sviat\NovaPoshtaTracking\Entities\NovaPoshtaTrackingEntity;
 /**
  * Накладні для SMS з модуля Sviat/NovaPoshta і старого NovaPoshtaTracking — того, що ввімкнений;
  * якщо накладна замовлення є в обох, береться нова.
- *
- * Кожна — об'єкт {order_id, int_doc_number, status_code (рядок), actual_delivery_at, cod}: форма
- * рядка старого трекінгу, з якою працює крон, плюс `cod` — отримувач платить при отриманні.
  */
-final class NovaPoshtaShipments
+final class NovaPoshtaShipments implements CarrierShipments
 {
     private readonly Closure $npOrders;
 
@@ -35,7 +33,6 @@ final class NovaPoshtaShipments
         return $this->newActive() || $this->oldActive();
     }
 
-    /** @return array<int, object> за id замовлення; фінальні статуси відсіює крон */
     public function active(): array
     {
         $result = [];
@@ -60,7 +57,7 @@ final class NovaPoshtaShipments
         return $result;
     }
 
-    public function forOrder(int $orderId): ?object
+    public function forOrder(int $orderId): ?CarrierShipment
     {
         if ($this->newActive()) {
             $shipment = ($this->npOrders)()->shipments([$orderId])[$orderId] ?? null;
@@ -78,28 +75,30 @@ final class NovaPoshtaShipments
         return null;
     }
 
-    private static function fromNew(object $shipment): object
+    private static function fromNew(object $shipment): CarrierShipment
     {
-        return (object)[
-            'order_id' => (int)$shipment->orderId,
-            'int_doc_number' => (string)$shipment->number,
-            'status_code' => $shipment->statusCode === null ? '' : (string)$shipment->statusCode,
-            'actual_delivery_at' => $shipment->arrivedAt,
-            'cod' => (bool)$shipment->cod,
-        ];
+        return new CarrierShipment(
+            (int)$shipment->orderId,
+            Carrier::NovaPoshta,
+            (string)$shipment->number,
+            $shipment->statusCode === null ? null : DeliveryStatusMapping::event((string)$shipment->statusCode),
+            $shipment->arrivedAt,
+            (bool)$shipment->cod,
+        );
     }
 
-    private static function fromOld(object $t, bool $cod): object
+    private static function fromOld(object $t, bool $cod): CarrierShipment
     {
         $code = (string)($t->status_code ?? '');
 
-        return (object)[
-            'order_id' => (int)$t->order_id,
-            'int_doc_number' => (string)$t->int_doc_number,
-            'status_code' => $code !== '' ? (string)(int)$code : '',
-            'actual_delivery_at' => $t->actual_delivery_at ?? null,
-            'cod' => $cod,
-        ];
+        return new CarrierShipment(
+            (int)$t->order_id,
+            Carrier::NovaPoshta,
+            (string)$t->int_doc_number,
+            $code !== '' ? DeliveryStatusMapping::event((string)(int)$code) : null,
+            $t->actual_delivery_at ?? null,
+            $cod,
+        );
     }
 
     /**

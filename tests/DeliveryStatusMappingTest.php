@@ -2,6 +2,7 @@
 
 namespace Modules\Sviat\Messaging;
 
+use Okay\Modules\Sviat\Messaging\Carriers\ShipmentEvent;
 use Okay\Modules\Sviat\Messaging\Helpers\DeliveryStatusMapping;
 use PHPUnit\Framework\TestCase;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -102,5 +103,21 @@ class DeliveryStatusMappingTest extends TestCase
             DeliveryStatusMapping::fromNovaPoshta('7'),
             DeliveryStatusMapping::fromNovaPoshta((string) 7)
         );
+    }
+
+    /** Крон читає подію замість предикатів: розбіжність хоч в одному коді змінила б SMS для Нової Пошти. */
+    public function testEventAgreesWithLegacyPredicates(): void
+    {
+        for ($i = 0; $i <= 200; $i++) {
+            $code = (string)$i;
+            $event = DeliveryStatusMapping::event($code);
+            self::assertSame(DeliveryStatusMapping::isNovaPoshtaInTransit($code), $event === ShipmentEvent::Shipped, "shipped {$code}");
+            self::assertSame(DeliveryStatusMapping::isNovaPoshtaArrived($code), $event === ShipmentEvent::Arrived, "arrived {$code}");
+            self::assertSame(DeliveryStatusMapping::isNovaPoshtaReceived($code), $event === ShipmentEvent::Received, "received {$code}");
+            self::assertSame(DeliveryStatusMapping::isNovaPoshtaFinalStatus($code), $event?->isFinal() ?? false, "final {$code}");
+        }
+        self::assertSame(ShipmentEvent::Returned, DeliveryStatusMapping::event('102'));
+        self::assertSame(ShipmentEvent::Closed, DeliveryStatusMapping::event('2'));
+        self::assertNull(DeliveryStatusMapping::event(''));
     }
 }

@@ -4,12 +4,13 @@ namespace Okay\Modules\Sviat\Messaging\Backend\Controllers;
 
 use Okay\Admin\Controllers\IndexAdmin;
 use Okay\Core\EntityFactory;
+use Okay\Modules\Sviat\Messaging\Carriers\Carrier;
+use Okay\Modules\Sviat\Messaging\Carriers\CarrierShipments;
+use Okay\Modules\Sviat\Messaging\Carriers\UkrposhtaShipments;
 use Okay\Modules\Sviat\Messaging\Helpers\MessageTemplates;
-use Okay\Modules\Sviat\Messaging\Helpers\NovaPoshtaShipments;
 use Okay\Modules\Sviat\Messaging\Helpers\SecretSetting;
 use Okay\Modules\Sviat\Messaging\Providers\SmsClubProvider;
 use Okay\Modules\Sviat\Messaging\Providers\TurboSmsProvider;
-use Okay\Modules\Sviat\Messaging\Services\NotificationEventService;
 
 /** Налаштування провайдера SMS та типів повідомлень; баланс і приблизна к-сть SMS. */
 class MessagingAdmin extends IndexAdmin
@@ -17,7 +18,7 @@ class MessagingAdmin extends IndexAdmin
     private const float TURBOSMS_PRICE_PER_SMS = 1.29;
     private const float SMSCLUB_PRICE_PER_SMS = 1.29;
 
-    public function fetch(SmsClubProvider $smsClubProvider, TurboSmsProvider $turbosmsProvider, EntityFactory $entityFactory, NovaPoshtaShipments $npShipments)
+    public function fetch(SmsClubProvider $smsClubProvider, TurboSmsProvider $turbosmsProvider, EntityFactory $entityFactory, CarrierShipments $shipments, UkrposhtaShipments $ukrposhta)
     {
         if ($this->request->method('post')) {
             $this->settings->set('sviat__messaging__provider', $this->request->post('provider') === 'smsclub' ? 'smsclub' : 'turbosms');
@@ -55,13 +56,10 @@ class MessagingAdmin extends IndexAdmin
         $this->design->assign('reminder_2day_enabled', (bool)$this->settings->get('sviat__messaging__reminder_2day_enabled'));
         $this->design->assign('storage_warning_enabled', (bool)$this->settings->get('sviat__messaging__storage_warning_enabled'));
 
-        $this->design->assign('is_nova_poshta_tracking_installed', $npShipments->available());
+        $this->design->assign('is_carrier_available', $shipments->available());
 
-        $sampleDocNumber = '20451329330540';
-        $this->design->assign('example_shipped_message', MessageTemplates::getMessage(NotificationEventService::TYPE_SHIPPED, ['doc_number' => $sampleDocNumber, 'order_id' => 12345]));
-        $this->design->assign('example_arrived_message', MessageTemplates::getMessage(NotificationEventService::TYPE_ARRIVED, ['doc_number' => $sampleDocNumber, 'order_id' => 12345]));
-        $this->design->assign('example_reminder_2day_message', MessageTemplates::getMessage(NotificationEventService::TYPE_REMINDER_2DAY, ['doc_number' => $sampleDocNumber, 'order_id' => 12345]));
-        $this->design->assign('example_storage_warning_message', MessageTemplates::getMessage(NotificationEventService::TYPE_STORAGE_WARNING, ['doc_number' => $sampleDocNumber, 'order_id' => 12345]));
+        $this->design->assign('examples', MessageTemplates::examples(Carrier::NovaPoshta));
+        $this->design->assign('examples_ukrposhta', $ukrposhta->available() ? MessageTemplates::examples(Carrier::Ukrposhta) : []);
 
         if ($provider === 'turbosms') {
             $balance = $turbosmsProvider->getBalance();

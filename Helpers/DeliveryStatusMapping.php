@@ -2,6 +2,8 @@
 
 namespace Okay\Modules\Sviat\Messaging\Helpers;
 
+use Okay\Modules\Sviat\Messaging\Carriers\ShipmentEvent;
+
 /**
  * Мапінг кодів статусів Нова Пошта → події для SMS. Коди згідно офіційної документації НП.
  */
@@ -35,6 +37,31 @@ class DeliveryStatusMapping
 
     /** Статуси, для яких не створюємо події: отримано, видалено, відмова, повернення, тощо. */
     public const NP_FINAL_STATUSES = ['2', '3', '9', '10', '11', '102', '103', '105', '106'];
+
+    /** Код НП => подія; збігається з предикатами isNovaPoshta*() код у код, а фінальні події відповідають NP_FINAL_STATUSES. */
+    private const array NP_EVENTS = [
+        '4' => ShipmentEvent::Shipped,
+        '41' => ShipmentEvent::Shipped,
+        '5' => ShipmentEvent::Shipped,
+        '6' => ShipmentEvent::Shipped,
+        '101' => ShipmentEvent::Shipped,
+        '7' => ShipmentEvent::Arrived,
+        '8' => ShipmentEvent::Arrived,
+        '9' => ShipmentEvent::Received,
+        '10' => ShipmentEvent::Received,
+        '11' => ShipmentEvent::Received,
+        '102' => ShipmentEvent::Returned,
+        '103' => ShipmentEvent::Returned,
+        '105' => ShipmentEvent::Returned,
+        '2' => ShipmentEvent::Closed,
+        '3' => ShipmentEvent::Closed,
+        '106' => ShipmentEvent::Closed,
+    ];
+
+    public static function event(string $statusCode): ?ShipmentEvent
+    {
+        return self::NP_EVENTS[$statusCode] ?? null;
+    }
 
     public static function fromNovaPoshta(string $statusCode): ?array
     {
