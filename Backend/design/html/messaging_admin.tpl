@@ -22,7 +22,7 @@
     </div>
 {/if}
 
-{if !$is_nova_poshta_tracking_installed}
+{if !$is_carrier_available}
 <div class="row d_flex">
     <div class="col-lg-12 col-md-12">
         <div class="alert alert--icon">
@@ -140,9 +140,14 @@
                 </div>
                 <div class="toggle_body_wrap on">
                     <p class="text-muted small mb-1">{$btr->sviat_messaging_type_shipped_desc|escape}</p>
-                    <div class="heading_label"><span>{$btr->sviat_messaging_example_title|escape}</span></div>
-                    <div class="messaging_sms_preview">{$example_shipped_message|escape}</div>
-                    <p class="text-muted small mt-h">{$btr->sviat_messaging_example_chars|escape}: {$example_shipped_message|count_characters:true}</p>
+                    <div class="heading_label"><span>{if $examples_ukrposhta}{$btr->sviat_messaging_example_title_novaposhta|escape}{else}{$btr->sviat_messaging_example_title|escape}{/if}</span></div>
+                    <div class="messaging_sms_preview">{$examples.shipped|escape}</div>
+                    <p class="text-muted small mt-h">{$btr->sviat_messaging_example_chars|escape}: {$examples.shipped|count_characters:true}</p>
+                    {if isset($examples_ukrposhta.shipped)}
+                    <div class="heading_label"><span>{$btr->sviat_messaging_example_title_ukrposhta|escape}</span></div>
+                    <div class="messaging_sms_preview">{$examples_ukrposhta.shipped|escape}</div>
+                    <p class="text-muted small mt-h">{$btr->sviat_messaging_example_chars|escape}: {$examples_ukrposhta.shipped|count_characters:true}</p>
+                    {/if}
                 </div>
             </div>
         </div>
@@ -158,9 +163,14 @@
                 </div>
                 <div class="toggle_body_wrap on">
                     <p class="text-muted small mb-1">{$btr->sviat_messaging_type_arrived_desc|escape}</p>
-                    <div class="heading_label"><span>{$btr->sviat_messaging_example_title|escape}</span></div>
-                    <div class="messaging_sms_preview">{$example_arrived_message|escape}</div>
-                    <p class="text-muted small mt-h">{$btr->sviat_messaging_example_chars|escape}: {$example_arrived_message|count_characters:true}</p>
+                    <div class="heading_label"><span>{if $examples_ukrposhta}{$btr->sviat_messaging_example_title_novaposhta|escape}{else}{$btr->sviat_messaging_example_title|escape}{/if}</span></div>
+                    <div class="messaging_sms_preview">{$examples.arrived|escape}</div>
+                    <p class="text-muted small mt-h">{$btr->sviat_messaging_example_chars|escape}: {$examples.arrived|count_characters:true}</p>
+                    {if isset($examples_ukrposhta.arrived)}
+                    <div class="heading_label"><span>{$btr->sviat_messaging_example_title_ukrposhta|escape}</span></div>
+                    <div class="messaging_sms_preview">{$examples_ukrposhta.arrived|escape}</div>
+                    <p class="text-muted small mt-h">{$btr->sviat_messaging_example_chars|escape}: {$examples_ukrposhta.arrived|count_characters:true}</p>
+                    {/if}
                 </div>
             </div>
         </div>
@@ -176,9 +186,14 @@
                 </div>
                 <div class="toggle_body_wrap on">
                     <p class="text-muted small mb-1">{$btr->sviat_messaging_type_reminder_2day_desc|escape}</p>
-                    <div class="heading_label"><span>{$btr->sviat_messaging_example_title|escape}</span></div>
-                    <div class="messaging_sms_preview">{$example_reminder_2day_message|escape}</div>
-                    <p class="text-muted small mt-h">{$btr->sviat_messaging_example_chars|escape}: {$example_reminder_2day_message|count_characters:true}</p>
+                    <div class="heading_label"><span>{if $examples_ukrposhta}{$btr->sviat_messaging_example_title_novaposhta|escape}{else}{$btr->sviat_messaging_example_title|escape}{/if}</span></div>
+                    <div class="messaging_sms_preview">{$examples.reminder_2day|escape}</div>
+                    <p class="text-muted small mt-h">{$btr->sviat_messaging_example_chars|escape}: {$examples.reminder_2day|count_characters:true}</p>
+                    {if isset($examples_ukrposhta.reminder_2day)}
+                    <div class="heading_label"><span>{$btr->sviat_messaging_example_title_ukrposhta|escape}</span></div>
+                    <div class="messaging_sms_preview">{$examples_ukrposhta.reminder_2day|escape}</div>
+                    <p class="text-muted small mt-h">{$btr->sviat_messaging_example_chars|escape}: {$examples_ukrposhta.reminder_2day|count_characters:true}</p>
+                    {/if}
                 </div>
             </div>
         </div>
@@ -194,9 +209,9 @@
                 </div>
                 <div class="toggle_body_wrap on">
                     <p class="text-muted small mb-1">{$btr->sviat_messaging_type_storage_warning_desc|escape}</p>
-                    <div class="heading_label"><span>{$btr->sviat_messaging_example_title|escape}</span></div>
-                    <div class="messaging_sms_preview">{$example_storage_warning_message|escape}</div>
-                    <p class="text-muted small mt-h">{$btr->sviat_messaging_example_chars|escape}: {$example_storage_warning_message|count_characters:true}</p>
+                    <div class="heading_label"><span>{if $examples_ukrposhta}{$btr->sviat_messaging_example_title_novaposhta|escape}{else}{$btr->sviat_messaging_example_title|escape}{/if}</span></div>
+                    <div class="messaging_sms_preview">{$examples.storage_warning|escape}</div>
+                    <p class="text-muted small mt-h">{$btr->sviat_messaging_example_chars|escape}: {$examples.storage_warning|count_characters:true}</p>
                 </div>
             </div>
         </div>

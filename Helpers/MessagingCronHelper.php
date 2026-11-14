@@ -6,16 +6,16 @@ use Okay\Core\EntityFactory;
 use Okay\Core\Settings;
 use Okay\Entities\DeliveriesEntity;
 use Okay\Entities\OrdersEntity;
+use Okay\Modules\Sviat\Messaging\Carriers\CarrierShipments;
+use Okay\Modules\Sviat\Messaging\Carriers\ShipmentEvent;
 use Okay\Modules\Sviat\Messaging\Entities\NotificationLogEntity;
 use Okay\Modules\Sviat\Messaging\Providers\SmsProviderFactory;
 use Okay\Modules\Sviat\Messaging\Providers\SmsProviderInterface;
 use Okay\Modules\Sviat\Messaging\Services\NotificationEventService;
 
-/** Крон: події доставки НП → створення/відправка SMS; повтор при помилках. */
+/** Крон: події доставки перевізників → створення/відправка SMS; повтор при помилках. */
 class MessagingCronHelper
 {
-    private const int STORAGE_FREE_DAYS = 7;
-    private const int STORAGE_WARNING_DAY = 6;
     private const int SEC_PER_HOUR = 3600;
     private const int SEC_PER_DAY = 86400;
 
@@ -34,7 +34,7 @@ class MessagingCronHelper
         NotificationEventService $eventService,
         SmsProviderFactory $providerFactory,
         Settings $settings,
-        private readonly NovaPoshtaShipments $shipments
+        private readonly CarrierShipments $shipments
     ) {
         $this->entityFactory = $entityFactory;
         $this->eventService = $eventService;
@@ -49,142 +49,106 @@ class MessagingCronHelper
 
     public function processEventsAndSend(): array
     {
-        $stats = ['events_created' => 0, 'sent' => 0, 'errors' => 0, 'skipped' => 0];
+        $eventsCreated = $this->createEvents();
+        $sent = $this->sendPending();
 
-        $trackingByOrderId = [];
-        foreach ($this->shipments->active() as $orderId => $t) {
-            if ($t->status_code !== '' && DeliveryStatusMapping::isNovaPoshtaFinalStatus($t->status_code)) {
+        return ['events_created' => $eventsCreated, 'sent' => $sent['sent'], 'errors' => $sent['errors'], 'skipped' => 0];
+    }
+
+    /** Ставить у чергу SMS за станом посилок, нічого не надсилаючи. */
+    public function createEvents(): int
+    {
+        $created = 0;
+
+        $shipmentsByOrderId = [];
+        foreach ($this->shipments->active() as $orderId => $shipment) {
+            if ($shipment->event?->isFinal()) {
                 continue;
             }
-            $trackingByOrderId[$orderId] = $t;
+            $shipmentsByOrderId[$orderId] = $shipment;
+        }
+        if ($shipmentsByOrderId === []) {
+            return 0;
         }
 
-        $ordersEntity = $this->entityFactory->get(OrdersEntity::class);
-        $deliveriesEntity = $this->entityFactory->get(DeliveriesEntity::class);
+        $orderIds = array_keys($shipmentsByOrderId);
+        // Без ліміту сутність віддала б лише 100 замовлень, а накладних у дорозі буває більше.
+        $orders = $this->entityFactory->get(OrdersEntity::class)->find(['id' => $orderIds, 'limit' => count($orderIds)]);
+        $ordersById = [];
+        foreach ($orders as $o) {
+            $ordersById[$o->id] = $o;
+        }
 
-        if ($trackingByOrderId !== []) {
-            $orderIds = array_keys($trackingByOrderId);
-            // Без ліміту сутність віддала б лише 100 замовлень, а накладних у дорозі буває більше.
-            $orders = $ordersEntity->find(['id' => $orderIds, 'limit' => count($orderIds)]);
-            $ordersById = [];
-            foreach ($orders as $o) {
-                $ordersById[$o->id] = $o;
+        $deliveryIds = array_unique(array_filter(array_column($orders, 'delivery_id')));
+        $deliveries = $deliveryIds ? $this->entityFactory->get(DeliveriesEntity::class)->find(['id' => $deliveryIds]) : [];
+        $deliveriesById = [];
+        foreach ($deliveries as $d) {
+            $deliveriesById[$d->id] = $d;
+        }
+
+        $providerName = $this->getSmsProvider()->getName();
+
+        foreach ($shipmentsByOrderId as $orderId => $shipment) {
+            $order = $ordersById[$orderId] ?? null;
+            if (!$order) {
+                continue;
+            }
+            $delivery = isset($order->delivery_id) ? ($deliveriesById[$order->delivery_id] ?? null) : null;
+            $phone = PhoneFormatter::format($order->phone ?? '');
+            if (!$phone) {
+                continue;
+            }
+            if (!$this->eventService->isOrderEligibleForSms($order, $shipment, $delivery)) {
+                continue;
             }
 
-            $deliveryIds = array_unique(array_filter(array_column($orders, 'delivery_id')));
-            $deliveries = $deliveryIds ? $deliveriesEntity->find(['id' => $deliveryIds]) : [];
-            $deliveriesById = [];
-            foreach ($deliveries as $d) {
-                $deliveriesById[$d->id] = $d;
+            $isHighValue = $this->eventService->isHighValueOrder($order, 1000);
+            $arrivedAt = $shipment->arrivedAt ? strtotime($shipment->arrivedAt) : null;
+            $isArrived = $shipment->event === ShipmentEvent::Arrived;
+            $queue = function (string $type, int $priority) use ($orderId, $phone, $shipment, $providerName, &$created): void {
+                $message = MessageTemplates::getMessage($type, ['doc_number' => $shipment->number, 'order_id' => $orderId], $shipment->carrier);
+                $eventKey = $this->eventService->buildEventKey($orderId, $type, $shipment);
+                if ($this->eventService->createPendingNotification($orderId, $phone, NotificationEventService::CHANNEL_SMS, $type, $message, $eventKey, $providerName, $priority)) {
+                    $created++;
+                }
+            };
+
+            if ($this->settings->get(self::SETTING_SHIPPED) && $shipment->event === ShipmentEvent::Shipped) {
+                $queue(NotificationEventService::TYPE_SHIPPED, 8);
             }
 
-            $smsProvider = $this->getSmsProvider();
-            $providerName = $smsProvider->getName();
+            if ($this->settings->get(self::SETTING_ARRIVED) && $isArrived) {
+                $queue(NotificationEventService::TYPE_ARRIVED, 10);
+            }
 
-            foreach ($trackingByOrderId as $orderId => $tracking) {
-                $order = $ordersById[$orderId] ?? null;
-                if (!$order) {
-                    continue;
+            if ($this->settings->get(self::SETTING_REMINDER_2DAY) && $arrivedAt && $shipment->cod && $isArrived) {
+                $hoursSinceArrival = (time() - $arrivedAt) / self::SEC_PER_HOUR;
+                if ($hoursSinceArrival >= 48) {
+                    $queue(NotificationEventService::TYPE_REMINDER_2DAY, 6);
                 }
-                $delivery = isset($order->delivery_id) ? ($deliveriesById[$order->delivery_id] ?? null) : null;
-                $phone = PhoneFormatter::format($order->phone ?? '');
-                if (!$phone) {
-                    continue;
-                }
-                if (!$this->eventService->isOrderEligibleForSms($order, $tracking, $delivery)) {
-                    continue;
-                }
+            }
 
-                $isCashOnDelivery = $tracking->cod;
-                $isHighValue = $this->eventService->isHighValueOrder($order, 1000);
-
-                $docNumber = $tracking->int_doc_number ?? '';
-                $rawStatus = $tracking->status_code ?? '';
-                $statusCode = ($rawStatus !== '' && $rawStatus !== null) ? (string)(int)$rawStatus : '';
-                $actualDeliveryAt = $tracking->actual_delivery_at ? strtotime($tracking->actual_delivery_at) : null;
-                $isInTransit = DeliveryStatusMapping::isNovaPoshtaInTransit($statusCode);
-                $isArrived = DeliveryStatusMapping::isNovaPoshtaArrived($statusCode);
-
-                if ($this->settings->get(self::SETTING_SHIPPED) && $isInTransit) {
-                    $eventKey = $this->eventService->buildEventKey($orderId, NotificationEventService::TYPE_SHIPPED);
-                    $msg = MessageTemplates::getMessage(NotificationEventService::TYPE_SHIPPED, ['doc_number' => $docNumber, 'order_id' => $orderId]);
-                    $rec = $this->eventService->createPendingNotification(
-                        $orderId,
-                        $phone,
-                        NotificationEventService::CHANNEL_SMS,
-                        NotificationEventService::TYPE_SHIPPED,
-                        $msg,
-                        $eventKey,
-                        $providerName,
-                        8
-                    );
-                    if ($rec) {
-                        $stats['events_created']++;
-                    }
-                }
-
-                if ($this->settings->get(self::SETTING_ARRIVED) && $isArrived) {
-                    $eventKey = $this->eventService->buildEventKey($orderId, NotificationEventService::TYPE_ARRIVED);
-                    $msg = MessageTemplates::getMessage(NotificationEventService::TYPE_ARRIVED, ['doc_number' => $docNumber, 'order_id' => $orderId]);
-                    $rec = $this->eventService->createPendingNotification(
-                        $orderId,
-                        $phone,
-                        NotificationEventService::CHANNEL_SMS,
-                        NotificationEventService::TYPE_ARRIVED,
-                        $msg,
-                        $eventKey,
-                        $providerName,
-                        10
-                    );
-                    if ($rec) {
-                        $stats['events_created']++;
-                    }
-                }
-
-                if ($this->settings->get(self::SETTING_REMINDER_2DAY) && $actualDeliveryAt && $isCashOnDelivery && $isArrived) {
-                    $hoursSinceArrival = (time() - $actualDeliveryAt) / self::SEC_PER_HOUR;
-                    if ($hoursSinceArrival >= 48) {
-                        $eventKey = $this->eventService->buildEventKey($orderId, NotificationEventService::TYPE_REMINDER_2DAY);
-                        $msg = MessageTemplates::getMessage(NotificationEventService::TYPE_REMINDER_2DAY, ['doc_number' => $docNumber, 'order_id' => $orderId]);
-                        $rec = $this->eventService->createPendingNotification(
-                            $orderId,
-                            $phone,
-                            NotificationEventService::CHANNEL_SMS,
-                            NotificationEventService::TYPE_REMINDER_2DAY,
-                            $msg,
-                            $eventKey,
-                            $providerName,
-                            6
-                        );
-                        if ($rec) {
-                            $stats['events_created']++;
-                        }
-                    }
-                }
-
-                if ($this->settings->get(self::SETTING_STORAGE_WARNING) && $actualDeliveryAt && ($isCashOnDelivery || $isHighValue) && $isArrived) {
-                    $daysSinceArrival = (time() - $actualDeliveryAt) / self::SEC_PER_DAY;
-                    if ($daysSinceArrival >= self::STORAGE_WARNING_DAY && $daysSinceArrival < self::STORAGE_FREE_DAYS) {
-                        $eventKey = $this->eventService->buildEventKey($orderId, NotificationEventService::TYPE_STORAGE_WARNING);
-                        $msg = MessageTemplates::getMessage(NotificationEventService::TYPE_STORAGE_WARNING, ['doc_number' => $docNumber, 'order_id' => $orderId]);
-                        $rec = $this->eventService->createPendingNotification(
-                            $orderId,
-                            $phone,
-                            NotificationEventService::CHANNEL_SMS,
-                            NotificationEventService::TYPE_STORAGE_WARNING,
-                            $msg,
-                            $eventKey,
-                            $providerName,
-                            7
-                        );
-                        if ($rec) {
-                            $stats['events_created']++;
-                        }
-                    }
+            $freeDays = $shipment->carrier->freeStorageDays();
+            if ($freeDays !== null && $this->settings->get(self::SETTING_STORAGE_WARNING) && $arrivedAt && ($shipment->cod || $isHighValue) && $isArrived) {
+                $daysSinceArrival = (time() - $arrivedAt) / self::SEC_PER_DAY;
+                // Попередження за добу до кінця безкоштовного зберігання.
+                if ($daysSinceArrival >= $freeDays - 1 && $daysSinceArrival < $freeDays) {
+                    $queue(NotificationEventService::TYPE_STORAGE_WARNING, 7);
                 }
             }
         }
 
+        return $created;
+    }
+
+    /**
+     * Надсилає чергу через провайдера.
+     *
+     * @return array{sent: int, errors: int}
+     */
+    public function sendPending(): array
+    {
+        $stats = ['sent' => 0, 'errors' => 0];
         $smsProvider = $this->getSmsProvider();
         $logEntity = $this->entityFactory->get(NotificationLogEntity::class);
         $pendingList = $logEntity->find([

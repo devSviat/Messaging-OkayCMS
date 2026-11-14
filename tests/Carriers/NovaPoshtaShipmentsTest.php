@@ -1,11 +1,13 @@
 <?php
 
-namespace Modules\Sviat\Messaging;
+namespace Modules\Sviat\Messaging\Carriers;
 
 use Okay\Core\EntityFactory;
 use Okay\Core\Modules\Modules;
 use Okay\Modules\OkayCMS\NovaposhtaCost\Entities\NPCostDeliveryDataEntity;
-use Okay\Modules\Sviat\Messaging\Helpers\NovaPoshtaShipments;
+use Okay\Modules\Sviat\Messaging\Carriers\Carrier;
+use Okay\Modules\Sviat\Messaging\Carriers\NovaPoshtaShipments;
+use Okay\Modules\Sviat\Messaging\Carriers\ShipmentEvent;
 use Okay\Modules\Sviat\Messaging\Services\NotificationEventService;
 use Okay\Modules\Sviat\NovaPoshta\Integration\NpOrders;
 use Okay\Modules\Sviat\NovaPoshtaTracking\Entities\NovaPoshtaTrackingEntity;
@@ -13,10 +15,10 @@ use PHPUnit\Framework\TestCase;
 
 // Сусідні модулі необов'язкові: без них класів немає, а перевірки доступності питають саме про клас.
 if (!class_exists(NpOrders::class)) {
-    require_once __DIR__ . '/NpOrdersStub.php';
+    require_once __DIR__ . '/../NpOrdersStub.php';
 }
 if (!class_exists(NovaPoshtaTrackingEntity::class)) {
-    require_once __DIR__ . '/NovaPoshtaTrackingEntityStub.php';
+    require_once __DIR__ . '/../NovaPoshtaTrackingEntityStub.php';
 }
 
 /**
@@ -93,9 +95,11 @@ class NovaPoshtaShipmentsTest extends TestCase
         $active = $this->source(true, false, [self::shipment(101, 7, '2026-11-05 10:00:00', true)])->active();
 
         self::assertSame([101], array_keys($active));
-        self::assertSame('2045000000101', $active[101]->int_doc_number);
-        self::assertSame('7', $active[101]->status_code);
-        self::assertSame('2026-11-05 10:00:00', $active[101]->actual_delivery_at);
+        self::assertSame(101, $active[101]->orderId);
+        self::assertSame(Carrier::NovaPoshta, $active[101]->carrier);
+        self::assertSame('2045000000101', $active[101]->number);
+        self::assertSame(ShipmentEvent::Arrived, $active[101]->event);
+        self::assertSame('2026-11-05 10:00:00', $active[101]->arrivedAt);
         self::assertTrue($active[101]->cod);
     }
 
@@ -103,8 +107,8 @@ class NovaPoshtaShipmentsTest extends TestCase
     {
         $active = $this->source(true, false, [self::shipment(101, null, null, false)])->active();
 
-        self::assertSame('', $active[101]->status_code);
-        self::assertNull($active[101]->actual_delivery_at);
+        self::assertNull($active[101]->event);
+        self::assertNull($active[101]->arrivedAt);
     }
 
     public function testOldModuleCodIsPaymentControl(): void
@@ -112,8 +116,9 @@ class NovaPoshtaShipmentsTest extends TestCase
         $old = [(object)['order_id' => 201, 'int_doc_number' => '20450000000201', 'status_code' => '7', 'actual_delivery_at' => '2026-11-04 09:00:00']];
         $active = $this->source(false, true, [], $old, [(object)['order_id' => 201, 'control_payment' => 1]])->active();
 
-        self::assertSame('20450000000201', $active[201]->int_doc_number);
-        self::assertSame('2026-11-04 09:00:00', $active[201]->actual_delivery_at);
+        self::assertSame('20450000000201', $active[201]->number);
+        self::assertSame(ShipmentEvent::Arrived, $active[201]->event);
+        self::assertSame('2026-11-04 09:00:00', $active[201]->arrivedAt);
         self::assertTrue($active[201]->cod);
         self::assertFalse($this->source(false, true, [], $old, [(object)['order_id' => 201, 'control_payment' => 0]])->active()[201]->cod);
     }
@@ -136,7 +141,7 @@ class NovaPoshtaShipmentsTest extends TestCase
         $keys = array_keys($active);
         sort($keys);
         self::assertSame([101, 202], $keys);
-        self::assertSame('2045000000101', $active[101]->int_doc_number);
+        self::assertSame('2045000000101', $active[101]->number);
     }
 
     /** Накладна вже отримана в новому модулі, а старий трекінг відстав: нагадувати нема про що. */
@@ -163,8 +168,8 @@ class NovaPoshtaShipmentsTest extends TestCase
         $old = [(object)['order_id' => 101, 'int_doc_number' => '20450000000999', 'status_code' => '4', 'actual_delivery_at' => null]];
         $source = $this->source(true, true, [self::shipment(101, 8, '2026-11-05 10:00:00', true)], $old);
 
-        self::assertSame('2045000000101', $source->forOrder(101)->int_doc_number);
-        self::assertSame('20450000000999', $this->source(false, true, [], $old)->forOrder(101)->int_doc_number);
+        self::assertSame('2045000000101', $source->forOrder(101)->number);
+        self::assertSame('20450000000999', $this->source(false, true, [], $old)->forOrder(101)->number);
     }
 
     public function testMoneyTransferCountsAsCashOnDelivery(): void
