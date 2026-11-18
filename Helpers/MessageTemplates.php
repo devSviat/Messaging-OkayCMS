@@ -18,14 +18,8 @@ class MessageTemplates
     {
         $params = array_merge(self::DEFAULT_PARAMS, $params);
         $orderNum = ($params['order_id'] !== '' && $params['order_id'] !== null) ? $params['order_id'] : '—';
-        $doc = $params['doc_number'];
 
-        $text = match ($carrier) {
-            Carrier::NovaPoshta => self::novaPoshta($type, $orderNum, $doc),
-            Carrier::Ukrposhta => self::ukrposhta($type, $orderNum, $doc),
-        };
-
-        return $text ?? $params['message'] ?? 'Повідомлення від магазину.';
+        return self::text($type, $carrier, $orderNum, $params['doc_number']) ?? $params['message'] ?? 'Повідомлення від магазину.';
     }
 
     /**
@@ -35,17 +29,30 @@ class MessageTemplates
      */
     public static function examples(Carrier $carrier): array
     {
-        $params = ['doc_number' => $carrier === Carrier::NovaPoshta ? '20451329330540' : '0500000012345', 'order_id' => 12345];
-        $types = [NotificationEventService::TYPE_SHIPPED, NotificationEventService::TYPE_ARRIVED, NotificationEventService::TYPE_REMINDER_2DAY];
-        if ($carrier->freeStorageDays() !== null) {
-            $types[] = NotificationEventService::TYPE_STORAGE_WARNING;
-        }
+        $params = ['doc_number' => match ($carrier) {
+            Carrier::NovaPoshta => '20451329330540',
+            Carrier::Ukrposhta => '0500000012345',
+            Carrier::Meest => '711-1234567',
+        }, 'order_id' => 12345];
+        $types = [NotificationEventService::TYPE_SHIPPED, NotificationEventService::TYPE_ARRIVED, NotificationEventService::TYPE_REMINDER_2DAY, NotificationEventService::TYPE_STORAGE_WARNING];
         $examples = [];
         foreach ($types as $type) {
-            $examples[$type] = self::getMessage($type, $params, $carrier);
+            $text = self::text($type, $carrier, $params['order_id'], $params['doc_number']);
+            if ($text !== null) {
+                $examples[$type] = $text;
+            }
         }
 
         return $examples;
+    }
+
+    private static function text(string $type, Carrier $carrier, mixed $orderNum, mixed $doc): ?string
+    {
+        return match ($carrier) {
+            Carrier::NovaPoshta => self::novaPoshta($type, $orderNum, $doc),
+            Carrier::Ukrposhta => self::ukrposhta($type, $orderNum, $doc),
+            Carrier::Meest => self::meest($type, $orderNum, $doc),
+        };
     }
 
     private static function novaPoshta(string $type, mixed $orderNum, mixed $doc): ?string
@@ -66,6 +73,16 @@ class MessageTemplates
             NotificationEventService::TYPE_SHIPPED => "Ваше замовлення №{$orderNum} відправлено Укрпоштою.\nНомер відправлення: {$doc}. Відстежити: " . Carrier::Ukrposhta->trackingUrl((string)$doc),
             NotificationEventService::TYPE_ARRIVED => "Ваше замовлення №{$orderNum} прибуло у відділення Укрпошти.\nНомер відправлення: {$doc}.",
             NotificationEventService::TYPE_REMINDER_2DAY => "Ваше замовлення №{$orderNum} чекає у відділенні Укрпошти вже 2 дні.\nНомер відправлення: {$doc}.",
+            default => null,
+        };
+    }
+
+    /** Нагадування немає, бо Meest працює без післяплати; попередження немає, бо строки зберігання не змодельовані. */
+    private static function meest(string $type, mixed $orderNum, mixed $doc): ?string
+    {
+        return match ($type) {
+            NotificationEventService::TYPE_SHIPPED => "Ваше замовлення №{$orderNum} відправлено Meest.\nНомер посилки: {$doc}. Відстежити: " . Carrier::Meest->trackingUrl((string)$doc),
+            NotificationEventService::TYPE_ARRIVED => "Ваше замовлення №{$orderNum} прибуло в пункт видачі Meest.\nНомер посилки: {$doc}.",
             default => null,
         };
     }

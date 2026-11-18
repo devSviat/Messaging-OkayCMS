@@ -54,6 +54,22 @@ class MessageTemplatesTest extends TestCase
         );
     }
 
+    /** Meest працює без післяплати, тож тексту нагадування й попередження про зберігання немає. */
+    public function testMeestTexts(): void
+    {
+        $params = ['doc_number' => '711-1234567', 'order_id' => 123];
+
+        self::assertSame(
+            "Ваше замовлення №123 відправлено Meest.\nНомер посилки: 711-1234567. Відстежити: https://t.meest-group.com/711-1234567",
+            MessageTemplates::getMessage(NotificationEventService::TYPE_SHIPPED, $params, Carrier::Meest)
+        );
+        self::assertSame(
+            "Ваше замовлення №123 прибуло в пункт видачі Meest.\nНомер посилки: 711-1234567.",
+            MessageTemplates::getMessage(NotificationEventService::TYPE_ARRIVED, $params, Carrier::Meest)
+        );
+        self::assertSame([NotificationEventService::TYPE_SHIPPED, NotificationEventService::TYPE_ARRIVED], array_keys(MessageTemplates::examples(Carrier::Meest)));
+    }
+
     public function testManualMessagePassesThrough(): void
     {
         self::assertSame('Привіт', MessageTemplates::getMessage(NotificationEventService::TYPE_MANUAL, ['message' => 'Привіт'], Carrier::Ukrposhta));

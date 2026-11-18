@@ -105,6 +105,11 @@ class UkrposhtaShipmentsTest extends TestCase
         return $cases;
     }
 
+    public function testCarrierIsUkrposhta(): void
+    {
+        self::assertSame(Carrier::Ukrposhta, $this->source(true, [])->carrier());
+    }
+
     /** Нова група в модулі Укрпошти без рядка в мапінгу мовчки глушила б SMS. */
     public function testEveryUkrposhtaGroupIsCovered(): void
     {
@@ -152,9 +157,9 @@ class UkrposhtaShipmentsTest extends TestCase
             }
         };
         $all = new AllCarrierShipments(
+            new DeliveryCarriers($this->createStub(EntityFactory::class)),
             new NovaPoshtaShipments($modules, $this->createStub(EntityFactory::class), static fn(): object => $np),
             new UkrposhtaShipments($modules, static fn(): object => throw new \LogicException('фасад вимкненого модуля не будується')),
-            new DeliveryCarriers($this->createStub(EntityFactory::class)),
         );
 
         self::assertSame([5], array_keys($all->active()));

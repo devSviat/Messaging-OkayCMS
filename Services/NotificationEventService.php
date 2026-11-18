@@ -6,7 +6,7 @@ use Okay\Core\EntityFactory;
 use Okay\Core\Settings;
 use Okay\Modules\Sviat\Messaging\Carriers\Carrier;
 use Okay\Modules\Sviat\Messaging\Carriers\CarrierShipment;
-use Okay\Modules\Sviat\Messaging\Carriers\CarrierShipments;
+use Okay\Modules\Sviat\Messaging\Carriers\ShipmentSource;
 use Okay\Modules\Sviat\Messaging\Carriers\ShipmentEvent;
 use Okay\Modules\Sviat\Messaging\Entities\NotificationLogEntity;
 use Okay\Modules\Sviat\Messaging\Helpers\PhoneFormatter;
@@ -32,7 +32,7 @@ class NotificationEventService
     private $entityFactory;
     private $settings;
 
-    public function __construct(EntityFactory $entityFactory, Settings $settings, private readonly CarrierShipments $shipments)
+    public function __construct(EntityFactory $entityFactory, Settings $settings, private readonly ShipmentSource $shipments)
     {
         $this->entityFactory = $entityFactory;
         $this->settings = $settings;

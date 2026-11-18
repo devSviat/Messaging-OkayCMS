@@ -32,6 +32,11 @@ final class UkrposhtaShipments implements CarrierShipments
         $this->upOrders = $upOrders ?? static fn(): object => ServiceLocator::getInstance()->getService(UpOrders::class);
     }
 
+    public function carrier(): Carrier
+    {
+        return Carrier::Ukrposhta;
+    }
+
     public function available(): bool
     {
         return class_exists(UpOrders::class) && $this->modules->isActiveModule('Sviat', 'Ukrposhta');

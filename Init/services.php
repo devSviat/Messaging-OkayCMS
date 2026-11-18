@@ -8,8 +8,9 @@ use Okay\Core\Settings;
 use Okay\Modules\Sviat\Messaging\Backend\Controllers\MessagingAdmin;
 use Okay\Modules\Sviat\Messaging\Helpers\MessagingCronHelper;
 use Okay\Modules\Sviat\Messaging\Carriers\AllCarrierShipments;
-use Okay\Modules\Sviat\Messaging\Carriers\CarrierShipments;
+use Okay\Modules\Sviat\Messaging\Carriers\ShipmentSource;
 use Okay\Modules\Sviat\Messaging\Carriers\DeliveryCarriers;
+use Okay\Modules\Sviat\Messaging\Carriers\MeestShipments;
 use Okay\Modules\Sviat\Messaging\Carriers\NovaPoshtaShipments;
 use Okay\Modules\Sviat\Messaging\Carriers\UkrposhtaShipments;
 use Okay\Core\Modules\Modules;
@@ -40,18 +41,25 @@ return [
             new SR(Modules::class),
         ],
     ],
+    MeestShipments::class => [
+        'class' => MeestShipments::class,
+        'arguments' => [
+            new SR(Modules::class),
+        ],
+    ],
     DeliveryCarriers::class => [
         'class' => DeliveryCarriers::class,
         'arguments' => [
             new SR(EntityFactory::class),
         ],
     ],
-    CarrierShipments::class => [
+    ShipmentSource::class => [
         'class' => AllCarrierShipments::class,
         'arguments' => [
+            new SR(DeliveryCarriers::class),
             new SR(NovaPoshtaShipments::class),
             new SR(UkrposhtaShipments::class),
-            new SR(DeliveryCarriers::class),
+            new SR(MeestShipments::class),
         ],
     ],
     NotificationEventService::class => [
@@ -59,7 +67,7 @@ return [
         'arguments' => [
             new SR(EntityFactory::class),
             new SR(Settings::class),
-            new SR(CarrierShipments::class),
+            new SR(ShipmentSource::class),
         ],
     ],
     TurboSmsProvider::class => [
@@ -89,7 +97,7 @@ return [
             new SR(NotificationEventService::class),
             new SR(SmsProviderFactory::class),
             new SR(Settings::class),
-            new SR(CarrierShipments::class),
+            new SR(ShipmentSource::class),
         ],
     ],
 ];

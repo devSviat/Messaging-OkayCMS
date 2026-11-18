@@ -90,6 +90,11 @@ class NovaPoshtaShipmentsTest extends TestCase
         return new NovaPoshtaShipments($modules, $entityFactory, static fn(): object => $facade);
     }
 
+    public function testCarrierIsNovaPoshta(): void
+    {
+        self::assertSame(Carrier::NovaPoshta, $this->source(true, false, [])->carrier());
+    }
+
     public function testNewModuleShipmentTakesTheShapeTheCronReads(): void
     {
         $active = $this->source(true, false, [self::shipment(101, 7, '2026-11-05 10:00:00', true)])->active();
