@@ -6,12 +6,14 @@ enum Carrier: string
 {
     case NovaPoshta = 'novaposhta';
     case Ukrposhta = 'ukrposhta';
+    case Meest = 'meest';
 
     public function trackingUrl(string $number): string
     {
         return match ($this) {
             self::NovaPoshta => 'https://novaposhta.ua/tracking/' . $number,
             self::Ukrposhta => 'https://track.ukrposhta.ua/tracking_UA.html?barcode=' . $number,
+            self::Meest => 'https://t.meest-group.com/' . $number,
         };
     }
 
@@ -20,7 +22,7 @@ enum Carrier: string
     {
         return match ($this) {
             self::NovaPoshta => 7,
-            self::Ukrposhta => null,
+            self::Ukrposhta, self::Meest => null,
         };
     }
 }

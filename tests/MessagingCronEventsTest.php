@@ -8,7 +8,7 @@ use Okay\Entities\DeliveriesEntity;
 use Okay\Entities\OrdersEntity;
 use Okay\Modules\Sviat\Messaging\Carriers\Carrier;
 use Okay\Modules\Sviat\Messaging\Carriers\CarrierShipment;
-use Okay\Modules\Sviat\Messaging\Carriers\CarrierShipments;
+use Okay\Modules\Sviat\Messaging\Carriers\ShipmentSource;
 use Okay\Modules\Sviat\Messaging\Carriers\ShipmentEvent;
 use Okay\Modules\Sviat\Messaging\Entities\NotificationLogEntity;
 use Okay\Modules\Sviat\Messaging\Helpers\MessagingCronHelper;
@@ -36,7 +36,7 @@ class MessagingCronEventsTest extends TestCase
         foreach ($shipments as $s) {
             $byOrder[$s->orderId] = $s;
         }
-        $carriers = new class ($byOrder) implements CarrierShipments {
+        $carriers = new class ($byOrder) implements ShipmentSource {
             public function __construct(private array $byOrder)
             {
             }
@@ -121,6 +121,22 @@ class MessagingCronEventsTest extends TestCase
         self::assertStringContainsString('Укрпошти', $this->messages[7][0]);
         self::assertStringContainsString('0500000000007', $this->messages[7][0]);
         self::assertStringContainsString('Накладна: 20450000000008', $this->messages[8][0]);
+    }
+
+    /** Meest без післяплати й без змодельованих строків зберігання: лише «прибуло», хоч посилка чекає 6,5 дня. */
+    public function testMeestArrivedGetsNoReminderOrStorageWarning(): void
+    {
+        $created = $this->cron([
+            new CarrierShipment(7, Carrier::Meest, '711-0000007', ShipmentEvent::Arrived, self::ago(6.5), false),
+            new CarrierShipment(8, Carrier::Meest, '711-0000008', ShipmentEvent::Shipped, null, false),
+        ])->createEvents();
+
+        self::assertSame([NotificationEventService::TYPE_ARRIVED], $this->created[7]);
+        self::assertSame([NotificationEventService::TYPE_SHIPPED], $this->created[8]);
+        self::assertSame(2, $created);
+        self::assertStringContainsString('пункт видачі Meest', $this->messages[7][0]);
+        self::assertStringContainsString('711-0000007', $this->messages[7][0]);
+        self::assertStringContainsString('https://t.meest-group.com/711-0000008', $this->messages[8][0]);
     }
 
     public function testShippedUsesCarrierText(): void

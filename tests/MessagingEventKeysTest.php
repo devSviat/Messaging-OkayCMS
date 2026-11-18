@@ -8,7 +8,7 @@ use Okay\Entities\DeliveriesEntity;
 use Okay\Entities\OrdersEntity;
 use Okay\Modules\Sviat\Messaging\Carriers\Carrier;
 use Okay\Modules\Sviat\Messaging\Carriers\CarrierShipment;
-use Okay\Modules\Sviat\Messaging\Carriers\CarrierShipments;
+use Okay\Modules\Sviat\Messaging\Carriers\ShipmentSource;
 use Okay\Modules\Sviat\Messaging\Carriers\ShipmentEvent;
 use Okay\Modules\Sviat\Messaging\Entities\NotificationLogEntity;
 use Okay\Modules\Sviat\Messaging\Helpers\MessagingCronHelper;
@@ -93,7 +93,7 @@ class MessagingEventKeysTest extends TestCase
         $settings = $this->createStub(Settings::class);
         $settings->method('get')->willReturn(1);
 
-        $carriers = $this->createStub(CarrierShipments::class);
+        $carriers = $this->createStub(ShipmentSource::class);
         $carriers->method('active')->willReturn([7 => $shipment]);
         $carriers->method('forOrder')->willReturn($shipment);
 
@@ -110,7 +110,7 @@ class MessagingEventKeysTest extends TestCase
         $factory->method('getProvider')->willReturn($provider);
         $settings = $this->createStub(Settings::class);
         $settings->method('get')->willReturn(1);
-        $carriers = $this->createStub(CarrierShipments::class);
+        $carriers = $this->createStub(ShipmentSource::class);
         $carriers->method('active')->willReturn([7 => $shipment]);
 
         return new MessagingCronHelper($this->entityFactory, $events, $factory, $settings, $carriers)->createEvents();

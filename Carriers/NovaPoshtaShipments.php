@@ -28,6 +28,11 @@ final class NovaPoshtaShipments implements CarrierShipments
         $this->npOrders = $npOrders ?? static fn(): object => ServiceLocator::getInstance()->getService(NpOrders::class);
     }
 
+    public function carrier(): Carrier
+    {
+        return Carrier::NovaPoshta;
+    }
+
     public function available(): bool
     {
         return $this->newActive() || $this->oldActive();

@@ -6,7 +6,7 @@ use Okay\Core\EntityFactory;
 use Okay\Core\Settings;
 use Okay\Entities\DeliveriesEntity;
 use Okay\Entities\OrdersEntity;
-use Okay\Modules\Sviat\Messaging\Carriers\CarrierShipments;
+use Okay\Modules\Sviat\Messaging\Carriers\ShipmentSource;
 use Okay\Modules\Sviat\Messaging\Carriers\ShipmentEvent;
 use Okay\Modules\Sviat\Messaging\Entities\NotificationLogEntity;
 use Okay\Modules\Sviat\Messaging\Providers\SmsProviderFactory;
@@ -34,7 +34,7 @@ class MessagingCronHelper
         NotificationEventService $eventService,
         SmsProviderFactory $providerFactory,
         Settings $settings,
-        private readonly CarrierShipments $shipments
+        private readonly ShipmentSource $shipments
     ) {
         $this->entityFactory = $entityFactory;
         $this->eventService = $eventService;

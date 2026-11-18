@@ -1,6 +1,6 @@
 <?php
 
-$lang['sviat_messaging_title'] = 'SMS / Повідомлення (Нова Пошта, Укрпошта)';
+$lang['sviat_messaging_title'] = 'SMS / Повідомлення (Нова Пошта, Укрпошта, Meest)';
 $lang['sviat_messaging_provider_title'] = 'Провайдер SMS';
 $lang['sviat_messaging_provider_select'] = 'Оберіть провайдера';
 $lang['sviat_messaging_turbosms_token'] = 'Токен TurboSMS';
@@ -35,9 +35,10 @@ $lang['sviat_messaging_smsclub_status_empty'] = 'Поки немає відпр�
 $lang['sviat_messaging_example_title'] = 'Приклад повідомлення';
 $lang['sviat_messaging_example_title_novaposhta'] = 'Приклад для Нової Пошти';
 $lang['sviat_messaging_example_title_ukrposhta'] = 'Приклад для Укрпошти';
+$lang['sviat_messaging_example_title_meest'] = 'Приклад для Meest';
 $lang['sviat_messaging_example_chars'] = 'Символів';
 $lang['sviat_messaging_np_tracking_required_title'] = 'Потрібен модуль доставки';
-$lang['sviat_messaging_np_tracking_required_description'] = 'Для роботи модуля SMS/Повідомлення має бути встановлений і ввімкнений модуль Нова Пошта (Sviat/NovaPoshta або старий Sviat/NovaPoshtaTracking) чи Укрпошта (Sviat/Ukrposhta). Вони оновлюють статуси посилок, і за ними надсилаються SMS про відправлення, прибуття та нагадування.';
+$lang['sviat_messaging_np_tracking_required_description'] = 'Для роботи модуля SMS/Повідомлення має бути встановлений і ввімкнений модуль Нова Пошта (Sviat/NovaPoshta або старий Sviat/NovaPoshtaTracking), Укрпошта (Sviat/Ukrposhta) чи Meest (Sviat/Meest). Вони оновлюють статуси посилок, і за ними надсилаються SMS про відправлення, прибуття та нагадування.';
 $lang['sviat_messaging_token_keep'] = 'Токен збережено. Залиште поле порожнім, щоб не змінювати його.';
 $lang['sviat_messaging_token_empty'] = 'Токен ще не задано';
 $lang['sviat_messaging_token_clear'] = 'Видалити збережений токен';

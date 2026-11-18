@@ -1,6 +1,6 @@
 <?php
 
-$lang['sviat_messaging_title'] = 'SMS / Messaging (Nova Poshta, Ukrposhta)';
+$lang['sviat_messaging_title'] = 'SMS / Messaging (Nova Poshta, Ukrposhta, Meest)';
 $lang['sviat_messaging_provider_title'] = 'SMS provider';
 $lang['sviat_messaging_provider_select'] = 'Select provider';
 $lang['sviat_messaging_turbosms_token'] = 'TurboSMS token';
@@ -35,9 +35,10 @@ $lang['sviat_messaging_smsclub_status_empty'] = 'No SMS sent yet. Statuses are u
 $lang['sviat_messaging_example_title'] = 'Example message';
 $lang['sviat_messaging_example_title_novaposhta'] = 'Nova Poshta example';
 $lang['sviat_messaging_example_title_ukrposhta'] = 'Ukrposhta example';
+$lang['sviat_messaging_example_title_meest'] = 'Meest example';
 $lang['sviat_messaging_example_chars'] = 'Characters';
 $lang['sviat_messaging_np_tracking_required_title'] = 'Delivery module required';
-$lang['sviat_messaging_np_tracking_required_description'] = 'The Messaging module requires the Nova Poshta module (Sviat/NovaPoshta or the old Sviat/NovaPoshtaTracking) or the Ukrposhta module (Sviat/Ukrposhta) to be installed and enabled. They update shipment statuses, which trigger SMS notifications for shipped, arrived and reminder events.';
+$lang['sviat_messaging_np_tracking_required_description'] = 'The Messaging module requires the Nova Poshta module (Sviat/NovaPoshta or the old Sviat/NovaPoshtaTracking), the Ukrposhta module (Sviat/Ukrposhta) or the Meest module (Sviat/Meest) to be installed and enabled. They update shipment statuses, which trigger SMS notifications for shipped, arrived and reminder events.';
 $lang['sviat_messaging_token_keep'] = 'A token is saved. Leave the field empty to keep it';
 $lang['sviat_messaging_token_empty'] = 'No token set yet';
 $lang['sviat_messaging_token_clear'] = 'Delete the saved token';
