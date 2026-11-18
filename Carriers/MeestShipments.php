@@ -10,7 +10,7 @@ use Okay\Modules\Sviat\Meest\Integration\MeestOrders;
 /** Посилки модуля Sviat/Meest для SMS; без модуля або коли він вимкнений, їх немає. */
 final class MeestShipments implements CarrierShipments
 {
-    /** Групи статусів Meest означають ті самі події, що й групи Укрпошти (специфікація, «Адаптери»). */
+    /** Групи статусів Meest означають ті самі події, що й групи Укрпошти. */
     private const array EVENTS = [
         'created' => null,
         'in_transit' => ShipmentEvent::Shipped,
@@ -64,7 +64,7 @@ final class MeestShipments implements CarrierShipments
         return $parcel === null ? null : self::fromFacade($parcel);
     }
 
-    /** Посилки Meest без післяплати (специфікація, «Адаптери»), тож `cod` завжди false. */
+    /** Посилки Meest без післяплати, тож `cod` завжди false. */
     private static function fromFacade(object $parcel): CarrierShipment
     {
         return new CarrierShipment(
