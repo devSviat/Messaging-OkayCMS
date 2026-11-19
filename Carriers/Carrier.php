@@ -7,13 +7,16 @@ enum Carrier: string
     case NovaPoshta = 'novaposhta';
     case Ukrposhta = 'ukrposhta';
     case Meest = 'meest';
+    case Rozetka = 'rozetka';
 
+    /** Чи бере сторінка трекінгу ROZETKA Delivery номер з адреси, невідомо, тож посилання веде на форму без номера. */
     public function trackingUrl(string $number): string
     {
         return match ($this) {
             self::NovaPoshta => 'https://novaposhta.ua/tracking/' . $number,
             self::Ukrposhta => 'https://track.ukrposhta.ua/tracking_UA.html?barcode=' . $number,
             self::Meest => 'https://t.meest-group.com/' . $number,
+            self::Rozetka => 'https://rozetka.delivery/tracking/parcel',
         };
     }
 
@@ -22,7 +25,7 @@ enum Carrier: string
     {
         return match ($this) {
             self::NovaPoshta => 7,
-            self::Ukrposhta, self::Meest => null,
+            self::Ukrposhta, self::Meest, self::Rozetka => null,
         };
     }
 }

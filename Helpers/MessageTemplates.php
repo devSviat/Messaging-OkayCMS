@@ -33,6 +33,7 @@ class MessageTemplates
             Carrier::NovaPoshta => '20451329330540',
             Carrier::Ukrposhta => '0500000012345',
             Carrier::Meest => '711-1234567',
+            Carrier::Rozetka => '101000000123',
         }, 'order_id' => 12345];
         $types = [NotificationEventService::TYPE_SHIPPED, NotificationEventService::TYPE_ARRIVED, NotificationEventService::TYPE_REMINDER_2DAY, NotificationEventService::TYPE_STORAGE_WARNING];
         $examples = [];
@@ -52,6 +53,7 @@ class MessageTemplates
             Carrier::NovaPoshta => self::novaPoshta($type, $orderNum, $doc),
             Carrier::Ukrposhta => self::ukrposhta($type, $orderNum, $doc),
             Carrier::Meest => self::meest($type, $orderNum, $doc),
+            Carrier::Rozetka => self::rozetka($type, $orderNum, $doc),
         };
     }
 
@@ -83,6 +85,17 @@ class MessageTemplates
         return match ($type) {
             NotificationEventService::TYPE_SHIPPED => "Ваше замовлення №{$orderNum} відправлено Meest.\nНомер посилки: {$doc}. Відстежити: " . Carrier::Meest->trackingUrl((string)$doc),
             NotificationEventService::TYPE_ARRIVED => "Ваше замовлення №{$orderNum} прибуло в пункт видачі Meest.\nНомер посилки: {$doc}.",
+            default => null,
+        };
+    }
+
+    /** Попередження немає, бо строки зберігання не змодельовані. Номер у тексті, бо невідомо, чи бере його сторінка трекінгу з адреси. */
+    private static function rozetka(string $type, mixed $orderNum, mixed $doc): ?string
+    {
+        return match ($type) {
+            NotificationEventService::TYPE_SHIPPED => "Ваше замовлення №{$orderNum} відправлено ROZETKA Delivery.\nНомер посилки: {$doc}. Відстежити за номером: " . Carrier::Rozetka->trackingUrl((string)$doc),
+            NotificationEventService::TYPE_ARRIVED => "Ваше замовлення №{$orderNum} прибуло в точку видачі ROZETKA Delivery.\nНомер посилки: {$doc}.",
+            NotificationEventService::TYPE_REMINDER_2DAY => "Ваше замовлення №{$orderNum} чекає в точці видачі ROZETKA Delivery вже 2 дні.\nНомер посилки: {$doc}.",
             default => null,
         };
     }

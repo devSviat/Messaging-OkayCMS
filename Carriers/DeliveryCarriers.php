@@ -16,6 +16,7 @@ final class DeliveryCarriers
         'OkayCMS/NovaposhtaCost' => Carrier::NovaPoshta,
         'Sviat/Ukrposhta' => Carrier::Ukrposhta,
         'Sviat/Meest' => Carrier::Meest,
+        'Sviat/RozetkaDelivery' => Carrier::Rozetka,
     ];
 
     public function __construct(private readonly EntityFactory $entityFactory)

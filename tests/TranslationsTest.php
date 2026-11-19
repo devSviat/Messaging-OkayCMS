@@ -5,7 +5,7 @@ namespace Modules\Sviat\Messaging;
 use PHPUnit\Framework\TestCase;
 
 /**
- * Адмінка Messaging працює з Новою Поштою, Укрпоштою й Meest; тексти не мають обіцяти лише одну, а
+ * Адмінка Messaging працює з Новою Поштою, Укрпоштою, Meest і ROZETKA Delivery; тексти не мають обіцяти лише одну, а
  * попередження про платне зберігання надсилається тільки для Нової Пошти.
  */
 class TranslationsTest extends TestCase
@@ -58,6 +58,9 @@ class TranslationsTest extends TestCase
             self::assertStringContainsString('Meest', $lang['sviat_messaging_title'], $code);
             self::assertStringContainsString('Sviat/Meest', $lang['sviat_messaging_np_tracking_required_description'], $code);
             self::assertStringContainsString('Meest', $lang['sviat_messaging_example_title_meest'], $code);
+            self::assertStringContainsString('ROZETKA Delivery', $lang['sviat_messaging_title'], $code);
+            self::assertStringContainsString('Sviat/RozetkaDelivery', $lang['sviat_messaging_np_tracking_required_description'], $code);
+            self::assertStringContainsString('ROZETKA Delivery', $lang['sviat_messaging_example_title_rozetka'], $code);
         }
     }
 
