@@ -6,6 +6,7 @@ use Okay\Admin\Controllers\IndexAdmin;
 use Okay\Core\EntityFactory;
 use Okay\Modules\Sviat\Messaging\Carriers\Carrier;
 use Okay\Modules\Sviat\Messaging\Carriers\MeestShipments;
+use Okay\Modules\Sviat\Messaging\Carriers\RozetkaShipments;
 use Okay\Modules\Sviat\Messaging\Carriers\ShipmentSource;
 use Okay\Modules\Sviat\Messaging\Carriers\UkrposhtaShipments;
 use Okay\Modules\Sviat\Messaging\Helpers\MessageTemplates;
@@ -19,7 +20,7 @@ class MessagingAdmin extends IndexAdmin
     private const float TURBOSMS_PRICE_PER_SMS = 1.29;
     private const float SMSCLUB_PRICE_PER_SMS = 1.29;
 
-    public function fetch(SmsClubProvider $smsClubProvider, TurboSmsProvider $turbosmsProvider, EntityFactory $entityFactory, ShipmentSource $shipments, UkrposhtaShipments $ukrposhta, MeestShipments $meest)
+    public function fetch(SmsClubProvider $smsClubProvider, TurboSmsProvider $turbosmsProvider, EntityFactory $entityFactory, ShipmentSource $shipments, UkrposhtaShipments $ukrposhta, MeestShipments $meest, RozetkaShipments $rozetka)
     {
         if ($this->request->method('post')) {
             $this->settings->set('sviat__messaging__provider', $this->request->post('provider') === 'smsclub' ? 'smsclub' : 'turbosms');
@@ -62,6 +63,7 @@ class MessagingAdmin extends IndexAdmin
         $this->design->assign('examples', MessageTemplates::examples(Carrier::NovaPoshta));
         $this->design->assign('examples_ukrposhta', $ukrposhta->available() ? MessageTemplates::examples(Carrier::Ukrposhta) : []);
         $this->design->assign('examples_meest', $meest->available() ? MessageTemplates::examples(Carrier::Meest) : []);
+        $this->design->assign('examples_rozetka', $rozetka->available() ? MessageTemplates::examples(Carrier::Rozetka) : []);
 
         if ($provider === 'turbosms') {
             $balance = $turbosmsProvider->getBalance();

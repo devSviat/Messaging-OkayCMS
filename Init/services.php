@@ -12,6 +12,7 @@ use Okay\Modules\Sviat\Messaging\Carriers\ShipmentSource;
 use Okay\Modules\Sviat\Messaging\Carriers\DeliveryCarriers;
 use Okay\Modules\Sviat\Messaging\Carriers\MeestShipments;
 use Okay\Modules\Sviat\Messaging\Carriers\NovaPoshtaShipments;
+use Okay\Modules\Sviat\Messaging\Carriers\RozetkaShipments;
 use Okay\Modules\Sviat\Messaging\Carriers\UkrposhtaShipments;
 use Okay\Core\Modules\Modules;
 use Okay\Modules\Sviat\Messaging\Providers\SmsClubProvider;
@@ -47,6 +48,12 @@ return [
             new SR(Modules::class),
         ],
     ],
+    RozetkaShipments::class => [
+        'class' => RozetkaShipments::class,
+        'arguments' => [
+            new SR(Modules::class),
+        ],
+    ],
     DeliveryCarriers::class => [
         'class' => DeliveryCarriers::class,
         'arguments' => [
@@ -60,6 +67,7 @@ return [
             new SR(NovaPoshtaShipments::class),
             new SR(UkrposhtaShipments::class),
             new SR(MeestShipments::class),
+            new SR(RozetkaShipments::class),
         ],
     ],
     NotificationEventService::class => [

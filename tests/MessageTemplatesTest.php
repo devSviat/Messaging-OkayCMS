@@ -70,6 +70,39 @@ class MessageTemplatesTest extends TestCase
         self::assertSame([NotificationEventService::TYPE_SHIPPED, NotificationEventService::TYPE_ARRIVED], array_keys(MessageTemplates::examples(Carrier::Meest)));
     }
 
+    /** Сторінка трекінгу не приймає номер в адресі: номер стоїть у тексті, посилання веде на форму пошуку. */
+    public function testRozetkaTexts(): void
+    {
+        $params = ['doc_number' => '101000000123', 'order_id' => 123];
+
+        self::assertSame(
+            "Ваше замовлення №123 відправлено ROZETKA Delivery.\nНомер посилки: 101000000123. Відстежити за номером: https://rozetka.delivery/tracking/parcel",
+            MessageTemplates::getMessage(NotificationEventService::TYPE_SHIPPED, $params, Carrier::Rozetka)
+        );
+        self::assertSame(
+            "Ваше замовлення №123 прибуло в точку видачі ROZETKA Delivery.\nНомер посилки: 101000000123.",
+            MessageTemplates::getMessage(NotificationEventService::TYPE_ARRIVED, $params, Carrier::Rozetka)
+        );
+        self::assertSame(
+            "Ваше замовлення №123 чекає в точці видачі ROZETKA Delivery вже 2 дні.\nНомер посилки: 101000000123.",
+            MessageTemplates::getMessage(NotificationEventService::TYPE_REMINDER_2DAY, $params, Carrier::Rozetka)
+        );
+        self::assertSame(
+            [NotificationEventService::TYPE_SHIPPED, NotificationEventService::TYPE_ARRIVED, NotificationEventService::TYPE_REMINDER_2DAY],
+            array_keys(MessageTemplates::examples(Carrier::Rozetka))
+        );
+    }
+
+    /** Приклади інших перевізників у адмінці не змінилися з появою ROZETKA. */
+    public function testNpUkrposhtaMeestTextsUnchanged(): void
+    {
+        self::assertSame('2b773b71', hash('crc32b', serialize([
+            MessageTemplates::examples(Carrier::NovaPoshta),
+            MessageTemplates::examples(Carrier::Ukrposhta),
+            MessageTemplates::examples(Carrier::Meest),
+        ])));
+    }
+
     public function testManualMessagePassesThrough(): void
     {
         self::assertSame('Привіт', MessageTemplates::getMessage(NotificationEventService::TYPE_MANUAL, ['message' => 'Привіт'], Carrier::Ukrposhta));

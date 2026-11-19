@@ -139,6 +139,25 @@ class MessagingCronEventsTest extends TestCase
         self::assertStringContainsString('https://t.meest-group.com/711-0000008', $this->messages[8][0]);
     }
 
+    /** ROZETKA з післяплатою отримує нагадування, без неї ні; строки зберігання не змодельовані, тож попередження немає. */
+    public function testRozetkaArrivedCodGetsReminderButNoStorageWarning(): void
+    {
+        $created = $this->cron([
+            new CarrierShipment(7, Carrier::Rozetka, '101000000007', ShipmentEvent::Arrived, self::ago(6.5), true),
+            new CarrierShipment(8, Carrier::Rozetka, '101000000008', ShipmentEvent::Arrived, self::ago(6.5), false),
+            new CarrierShipment(9, Carrier::Rozetka, '101000000009', ShipmentEvent::Shipped, null, true),
+        ])->createEvents();
+
+        self::assertSame([NotificationEventService::TYPE_ARRIVED, NotificationEventService::TYPE_REMINDER_2DAY], $this->created[7]);
+        self::assertSame([NotificationEventService::TYPE_ARRIVED], $this->created[8]);
+        self::assertSame([NotificationEventService::TYPE_SHIPPED], $this->created[9]);
+        self::assertSame(4, $created);
+        self::assertStringContainsString('точку видачі ROZETKA Delivery', $this->messages[7][0]);
+        self::assertStringContainsString('101000000007', $this->messages[7][1]);
+        self::assertStringContainsString('https://rozetka.delivery/tracking/parcel', $this->messages[9][0]);
+        self::assertStringContainsString('101000000009', $this->messages[9][0]);
+    }
+
     public function testShippedUsesCarrierText(): void
     {
         $this->cron([new CarrierShipment(7, Carrier::Ukrposhta, '0500000000007', ShipmentEvent::Shipped, null, false)])->createEvents();

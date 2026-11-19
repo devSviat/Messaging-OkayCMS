@@ -15,9 +15,11 @@ use Okay\Modules\Sviat\Messaging\Carriers\CarrierShipment;
 use Okay\Modules\Sviat\Messaging\Carriers\DeliveryCarriers;
 use Okay\Modules\Sviat\Messaging\Carriers\MeestShipments;
 use Okay\Modules\Sviat\Messaging\Carriers\NovaPoshtaShipments;
+use Okay\Modules\Sviat\Messaging\Carriers\RozetkaShipments;
 use Okay\Modules\Sviat\Messaging\Carriers\UkrposhtaShipments;
 use Okay\Modules\Sviat\NovaPoshta\Integration\NpOrders;
 use Okay\Modules\Sviat\NovaPoshtaTracking\Entities\NovaPoshtaTrackingEntity;
+use Okay\Modules\Sviat\RozetkaDelivery\Integration\RozetkaOrders;
 use Okay\Modules\Sviat\Ukrposhta\Integration\UpOrders;
 use PHPUnit\Framework\TestCase;
 
@@ -33,6 +35,9 @@ if (!class_exists(UpOrders::class)) {
 if (!class_exists(MeestOrders::class)) {
     require_once __DIR__ . '/../MeestOrdersStub.php';
 }
+if (!class_exists(RozetkaOrders::class)) {
+    require_once __DIR__ . '/../RozetkaOrdersStub.php';
+}
 
 /**
  * Одне замовлення — один потік SMS, навіть коли менеджер змінив перевізника. Покинута накладна
@@ -45,6 +50,7 @@ class AllCarrierShipmentsTest extends TestCase
     private const int PICKUP = 3;
     private const int NP_COST_DELIVERY = 4;
     private const int MEEST_DELIVERY = 5;
+    private const int ROZETKA_DELIVERY = 6;
 
     /** @param array<int, object> $byOrder */
     private static function facade(array $byOrder): object
@@ -92,15 +98,17 @@ class AllCarrierShipmentsTest extends TestCase
      * @param array<int, int> $deliveryOf id доставки за id замовлення
      * @param list<object> $oldRows рядки старого NovaPoshtaTracking
      * @param array<int, object> $meest посилки Meest; модуль увімкнений, лише коли їх передано
+     * @param array<int, object> $rozetka ЕН ROZETKA; модуль увімкнений, лише коли їх передано
      */
-    private function all(bool $npActive, bool $upActive, array $np = [], array $up = [], array $deliveryOf = [], array $oldRows = [], bool $reversed = false, array $meest = []): AllCarrierShipments
+    private function all(bool $npActive, bool $upActive, array $np = [], array $up = [], array $deliveryOf = [], array $oldRows = [], bool $reversed = false, array $meest = [], array $rozetka = []): AllCarrierShipments
     {
         $modules = $this->createStub(Modules::class);
         $modules->method('isActiveModule')->willReturnCallback(static fn(string $vendor, string $name): bool => ($name === 'NovaPoshta' && $npActive)
-            || ($name === 'NovaPoshtaTracking' && $oldRows !== []) || ($name === 'Ukrposhta' && $upActive) || ($name === 'Meest' && $meest !== []));
+            || ($name === 'NovaPoshtaTracking' && $oldRows !== []) || ($name === 'Ukrposhta' && $upActive) || ($name === 'Meest' && $meest !== []) || ($name === 'RozetkaDelivery' && $rozetka !== []));
         $npFacade = self::facade($np);
         $upFacade = self::facade($up);
         $meestFacade = self::meestFacade($meest);
+        $rozetkaFacade = self::meestFacade($rozetka);
 
         $tracking = $this->createStub(NovaPoshtaTrackingEntity::class);
         $tracking->method('find')->willReturn($oldRows);
@@ -127,6 +135,7 @@ class AllCarrierShipmentsTest extends TestCase
             (object)['id' => self::PICKUP, 'module_id' => 0],
             (object)['id' => self::NP_COST_DELIVERY, 'module_id' => 13],
             (object)['id' => self::MEEST_DELIVERY, 'module_id' => 14],
+            (object)['id' => self::ROZETKA_DELIVERY, 'module_id' => 15],
         ]);
         $modulesEntity = $this->createStub(ModulesEntity::class);
         $modulesEntity->method('find')->willReturn([
@@ -134,6 +143,7 @@ class AllCarrierShipmentsTest extends TestCase
             (object)['id' => 12, 'vendor' => 'Sviat', 'module_name' => 'Ukrposhta'],
             (object)['id' => 13, 'vendor' => 'OkayCMS', 'module_name' => 'NovaposhtaCost'],
             (object)['id' => 14, 'vendor' => 'Sviat', 'module_name' => 'Meest'],
+            (object)['id' => 15, 'vendor' => 'Sviat', 'module_name' => 'RozetkaDelivery'],
         ]);
         $entityFactory = $this->createStub(EntityFactory::class);
         $entityFactory->method('get')->willReturnCallback(static fn(string $class) => match ($class) {
@@ -148,6 +158,7 @@ class AllCarrierShipmentsTest extends TestCase
             new NovaPoshtaShipments($modules, $entityFactory, static fn(): object => $npFacade),
             new UkrposhtaShipments($modules, static fn(): object => $upFacade),
             new MeestShipments($modules, static fn(): object => $meestFacade),
+            new RozetkaShipments($modules, static fn(): object => $rozetkaFacade),
         ];
 
         return new AllCarrierShipments(new DeliveryCarriers($entityFactory), ...($reversed ? array_reverse($adapters) : $adapters));
@@ -276,6 +287,53 @@ class AllCarrierShipmentsTest extends TestCase
     private static function meest(int $orderId, string $group = 'in_transit'): object
     {
         return (object)['orderId' => $orderId, 'barcode' => 'MEEST-' . $orderId, 'group' => $group, 'statusAt' => null, 'arrivedAt' => null];
+    }
+
+    private static function rozetka(int $orderId, string $group = 'in_transit', bool $cod = false): object
+    {
+        return (object)['orderId' => $orderId, 'trackId' => '1010000000' . $orderId, 'group' => $group, 'cod' => $cod, 'eventAt' => null, 'arrivedAt' => null];
+    }
+
+    /** Покупець обрав ROZETKA після того, як менеджер уже створив накладну НП, відправлення Укрпошти чи посилку Meest. */
+    public function testRozetkaWinsWhenDeliveryIsRozetka(): void
+    {
+        $deliveryOf = [5 => self::ROZETKA_DELIVERY, 6 => self::ROZETKA_DELIVERY, 7 => self::ROZETKA_DELIVERY];
+        foreach ([false, true] as $reversed) {
+            $all = $this->all(true, true, [5 => self::np(5)], [6 => self::up(6)], $deliveryOf, [], $reversed, [7 => self::meest(7)], [5 => self::rozetka(5), 6 => self::rozetka(6), 7 => self::rozetka(7, 'arrived', true)]);
+            $active = $all->active();
+
+            foreach ([5, 6, 7] as $orderId) {
+                self::assertSame(Carrier::Rozetka, $active[$orderId]->carrier, "active {$orderId}");
+                self::assertSame(Carrier::Rozetka, $all->forOrder($orderId)->carrier, "forOrder {$orderId}");
+            }
+            self::assertTrue($active[7]->cod);
+        }
+    }
+
+    /** Менеджер створив ЕН ROZETKA, потім перевів замовлення на іншу доставку: покинута ЕН мовчить. */
+    public function testAbandonedRozetkaLosesToCurrentDelivery(): void
+    {
+        foreach ([false, true] as $reversed) {
+            $all = $this->all(true, true, [5 => self::np(5)], [6 => self::up(6)], [5 => self::NP_DELIVERY, 6 => self::UP_DELIVERY, 7 => self::MEEST_DELIVERY], [], $reversed,
+                [7 => self::meest(7)], [5 => self::rozetka(5), 6 => self::rozetka(6), 7 => self::rozetka(7)]);
+            $active = $all->active();
+
+            self::assertSame(Carrier::NovaPoshta, $active[5]->carrier);
+            self::assertSame(Carrier::Ukrposhta, $active[6]->carrier);
+            self::assertSame(Carrier::Meest, $active[7]->carrier);
+            self::assertSame(Carrier::NovaPoshta, $all->forOrder(5)->carrier);
+            self::assertSame(Carrier::Ukrposhta, $all->forOrder(6)->carrier);
+            self::assertSame(Carrier::Meest, $all->forOrder(7)->carrier);
+        }
+    }
+
+    public function testRozetkaAloneIsTaken(): void
+    {
+        $all = $this->all(false, false, [], [], [], [], false, [], [5 => self::rozetka(5), 6 => self::rozetka(6, 'received')]);
+
+        self::assertTrue($all->available());
+        self::assertSame([5], array_keys($all->active()));
+        self::assertSame('10100000006', $all->forOrder(6)->number);
     }
 
     /** Покупець обрав Meest після того, як менеджер уже створив накладну НП чи відправлення Укрпошти. */
