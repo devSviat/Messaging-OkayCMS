@@ -157,4 +157,15 @@ class MessagingEventKeysTest extends TestCase
         self::assertSame(0, $this->createEvents(self::up()));
         self::assertSame(1, $this->createEvents(self::up('0500000000099')), 'нове відправлення Укрпошти має інший номер');
     }
+
+    /** Попередження про зберігання йде один раз, хоч крон за 5-й день запускається десятки разів. */
+    public function testStorageWarningIsNotRepeated(): void
+    {
+        $this->sent('order_7_arrived');
+        $arrived = new CarrierShipment(7, Carrier::NovaPoshta, '20450000000007', ShipmentEvent::Arrived, date('Y-m-d H:i:s', time() - (int)(5.5 * 86400)), false);
+
+        self::assertSame(1, $this->createEvents($arrived));
+        self::assertSame(0, $this->createEvents($arrived));
+        self::assertSame(['order_7_arrived', 'order_7_storage_warning'], $this->keys());
+    }
 }

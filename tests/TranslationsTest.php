@@ -64,12 +64,15 @@ class TranslationsTest extends TestCase
         }
     }
 
-    public function testStorageWarningSaysNovaPoshtaOnlyAndDaySix(): void
+    /** Підказка називає 5-й день і не обіцяє обмежень за оплатою чи сумою, яких крон не робить. */
+    public function testStorageWarningSaysNovaPoshtaOnlyAndDayFive(): void
     {
         foreach (['ua' => 'Нова Пошта', 'en' => 'Nova Poshta', 'ru' => 'Новая Почта'] as $code => $np) {
             $text = self::lang($code)['sviat_messaging_type_storage_warning_desc'];
             self::assertStringContainsString($np, $text, $code);
-            self::assertStringContainsString('6', $text, $code);
+            self::assertStringContainsString('5', $text, $code);
+            self::assertStringNotContainsString('6', $text, $code);
+            self::assertStringNotContainsString('1000', $text, $code);
         }
     }
 

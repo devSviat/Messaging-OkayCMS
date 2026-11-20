@@ -131,12 +131,6 @@ class NotificationEventService
         return (bool)($this->shipments->forOrder((int)($order->id ?? 0))->cod ?? false);
     }
 
-    public function isHighValueOrder(object $order, float $threshold = 1000.0): bool
-    {
-        $price = (float)($order->total_price ?? 0);
-        return $price >= $threshold;
-    }
-
     /** @return object|null Запис або null при дублі/антиспамі */
     public function createPendingNotification(
         int $orderId,

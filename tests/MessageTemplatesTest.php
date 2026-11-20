@@ -27,7 +27,7 @@ class MessageTemplatesTest extends TestCase
             MessageTemplates::getMessage(NotificationEventService::TYPE_REMINDER_2DAY, self::PARAMS)
         );
         self::assertSame(
-            "Ваше замовлення №123: завтра почнеться платне зберігання. Заберіть будь ласка сьогодні.\nНакладна: 20450000000123.",
+            "Ваше замовлення №123: завтра почнеться платне зберігання. Заберіть, будь ласка, сьогодні.\nНакладна: 20450000000123.",
             MessageTemplates::getMessage(NotificationEventService::TYPE_STORAGE_WARNING, self::PARAMS)
         );
         self::assertSame(
@@ -96,7 +96,7 @@ class MessageTemplatesTest extends TestCase
     /** Приклади інших перевізників у адмінці не змінилися з появою ROZETKA. */
     public function testNpUkrposhtaMeestTextsUnchanged(): void
     {
-        self::assertSame('2b773b71', hash('crc32b', serialize([
+        self::assertSame('0234b6c3', hash('crc32b', serialize([
             MessageTemplates::examples(Carrier::NovaPoshta),
             MessageTemplates::examples(Carrier::Ukrposhta),
             MessageTemplates::examples(Carrier::Meest),
