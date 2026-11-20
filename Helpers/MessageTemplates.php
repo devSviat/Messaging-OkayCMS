@@ -63,7 +63,7 @@ class MessageTemplates
             NotificationEventService::TYPE_SHIPPED => "Ваше замовлення №{$orderNum} відправлено.\nНакладна: {$doc}. Відстежити: " . Carrier::NovaPoshta->trackingUrl((string)$doc),
             NotificationEventService::TYPE_ARRIVED => "Ваше замовлення №{$orderNum} прибуло у відділення.\nНакладна: {$doc}.",
             NotificationEventService::TYPE_REMINDER_2DAY => "Ваше замовлення №{$orderNum} чекає у відділенні вже 2 дні.\nНакладна: {$doc}.",
-            NotificationEventService::TYPE_STORAGE_WARNING => "Ваше замовлення №{$orderNum}: завтра почнеться платне зберігання. Заберіть будь ласка сьогодні.\nНакладна: {$doc}.",
+            NotificationEventService::TYPE_STORAGE_WARNING => "Ваше замовлення №{$orderNum}: завтра почнеться платне зберігання. Заберіть, будь ласка, сьогодні.\nНакладна: {$doc}.",
             default => null,
         };
     }

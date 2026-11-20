@@ -102,7 +102,6 @@ class MessagingCronHelper
                 continue;
             }
 
-            $isHighValue = $this->eventService->isHighValueOrder($order, 1000);
             $arrivedAt = $shipment->arrivedAt ? strtotime($shipment->arrivedAt) : null;
             $isArrived = $shipment->event === ShipmentEvent::Arrived;
             $queue = function (string $type, int $priority) use ($orderId, $phone, $shipment, $providerName, &$created): void {
@@ -129,10 +128,10 @@ class MessagingCronHelper
             }
 
             $freeDays = $shipment->carrier->freeStorageDays();
-            if ($freeDays !== null && $this->settings->get(self::SETTING_STORAGE_WARNING) && $arrivedAt && ($shipment->cod || $isHighValue) && $isArrived) {
+            if ($freeDays !== null && $this->settings->get(self::SETTING_STORAGE_WARNING) && $arrivedAt && $isArrived) {
                 $daysSinceArrival = (time() - $arrivedAt) / self::SEC_PER_DAY;
-                // Попередження за добу до кінця безкоштовного зберігання.
-                if ($daysSinceArrival >= $freeDays - 1 && $daysSinceArrival < $freeDays) {
+                // Останній безплатний день: день прибуття не рахується, тож платне починається з дня freeDays + 1.
+                if ($daysSinceArrival >= $freeDays && $daysSinceArrival < $freeDays + 1) {
                     $queue(NotificationEventService::TYPE_STORAGE_WARNING, 7);
                 }
             }

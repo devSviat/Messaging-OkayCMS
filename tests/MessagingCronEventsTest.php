@@ -75,7 +75,6 @@ class MessagingCronEventsTest extends TestCase
 
         $events = $this->createStub(NotificationEventService::class);
         $events->method('isOrderEligibleForSms')->willReturn(true);
-        $events->method('isHighValueOrder')->willReturn(false);
         $events->method('buildEventKey')->willReturnCallback(static fn(int $orderId, string $type): string => "order_{$orderId}_{$type}");
         $events->method('createPendingNotification')->willReturnCallback(function (int $orderId, string $phone, string $channel, string $type, string $message): object {
             $this->created[$orderId][] = $type;
@@ -109,8 +108,8 @@ class MessagingCronEventsTest extends TestCase
     public function testUkrposhtaArrivedCodGetsReminderButNoStorageWarning(): void
     {
         $created = $this->cron([
-            new CarrierShipment(7, Carrier::Ukrposhta, '0500000000007', ShipmentEvent::Arrived, self::ago(6.5), true),
-            new CarrierShipment(8, Carrier::NovaPoshta, '20450000000008', ShipmentEvent::Arrived, self::ago(6.5), true),
+            new CarrierShipment(7, Carrier::Ukrposhta, '0500000000007', ShipmentEvent::Arrived, self::ago(5.5), true),
+            new CarrierShipment(8, Carrier::NovaPoshta, '20450000000008', ShipmentEvent::Arrived, self::ago(5.5), true),
             new CarrierShipment(9, Carrier::Ukrposhta, '0500000000009', ShipmentEvent::Arrived, self::ago(7), true),
         ])->createEvents();
 
@@ -123,11 +122,11 @@ class MessagingCronEventsTest extends TestCase
         self::assertStringContainsString('Накладна: 20450000000008', $this->messages[8][0]);
     }
 
-    /** Meest без післяплати й без змодельованих строків зберігання: лише «прибуло», хоч посилка чекає 6,5 дня. */
+    /** Meest без післяплати й без змодельованих строків зберігання: лише «прибуло», хоч посилка чекає 5,5 дня. */
     public function testMeestArrivedGetsNoReminderOrStorageWarning(): void
     {
         $created = $this->cron([
-            new CarrierShipment(7, Carrier::Meest, '711-0000007', ShipmentEvent::Arrived, self::ago(6.5), false),
+            new CarrierShipment(7, Carrier::Meest, '711-0000007', ShipmentEvent::Arrived, self::ago(5.5), false),
             new CarrierShipment(8, Carrier::Meest, '711-0000008', ShipmentEvent::Shipped, null, false),
         ])->createEvents();
 
@@ -143,8 +142,8 @@ class MessagingCronEventsTest extends TestCase
     public function testRozetkaArrivedCodGetsReminderButNoStorageWarning(): void
     {
         $created = $this->cron([
-            new CarrierShipment(7, Carrier::Rozetka, '101000000007', ShipmentEvent::Arrived, self::ago(6.5), true),
-            new CarrierShipment(8, Carrier::Rozetka, '101000000008', ShipmentEvent::Arrived, self::ago(6.5), false),
+            new CarrierShipment(7, Carrier::Rozetka, '101000000007', ShipmentEvent::Arrived, self::ago(5.5), true),
+            new CarrierShipment(8, Carrier::Rozetka, '101000000008', ShipmentEvent::Arrived, self::ago(5.5), false),
             new CarrierShipment(9, Carrier::Rozetka, '101000000009', ShipmentEvent::Shipped, null, true),
         ])->createEvents();
 
@@ -156,6 +155,28 @@ class MessagingCronEventsTest extends TestCase
         self::assertStringContainsString('101000000007', $this->messages[7][1]);
         self::assertStringContainsString('https://rozetka.delivery/tracking/parcel', $this->messages[9][0]);
         self::assertStringContainsString('101000000009', $this->messages[9][0]);
+    }
+
+    /**
+     * НП зберігає безплатно 5 днів, не рахуючи дня прибуття: попередження йде на 5-й день, і лише тоді.
+     * Замовлення по 500 грн без післяплати: сума й спосіб оплати попередження не обмежують.
+     */
+    public function testNovaPoshtaStorageWarningOnLastFreeDayForEveryParcel(): void
+    {
+        $this->cron([
+            new CarrierShipment(1, Carrier::NovaPoshta, '20450000000001', ShipmentEvent::Arrived, self::ago(4.9), false),
+            new CarrierShipment(2, Carrier::NovaPoshta, '20450000000002', ShipmentEvent::Arrived, self::ago(5.1), false),
+            new CarrierShipment(3, Carrier::NovaPoshta, '20450000000003', ShipmentEvent::Arrived, self::ago(5.9), false),
+            new CarrierShipment(4, Carrier::NovaPoshta, '20450000000004', ShipmentEvent::Arrived, self::ago(6.1), false),
+            new CarrierShipment(5, Carrier::NovaPoshta, '20450000000005', ShipmentEvent::Shipped, self::ago(5.5), false),
+        ])->createEvents();
+
+        $warned = array_keys(array_filter($this->created, static fn(array $types): bool => in_array(NotificationEventService::TYPE_STORAGE_WARNING, $types, true)));
+        self::assertSame([2, 3], $warned);
+        self::assertSame(5, Carrier::NovaPoshta->freeStorageDays());
+        self::assertNull(Carrier::Ukrposhta->freeStorageDays());
+        self::assertNull(Carrier::Meest->freeStorageDays());
+        self::assertNull(Carrier::Rozetka->freeStorageDays());
     }
 
     public function testShippedUsesCarrierText(): void

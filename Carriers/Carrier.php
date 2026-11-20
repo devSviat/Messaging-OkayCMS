@@ -20,11 +20,14 @@ enum Carrier: string
         };
     }
 
-    /** Днів безкоштовного зберігання у відділенні; null, якщо строки не змодельовані: тоді попередження не надсилається. */
+    /**
+     * Днів безкоштовного зберігання у відділенні без дня прибуття; null, якщо строки не змодельовані: тоді попередження не надсилається.
+     * Нова Пошта: 5 днів з 01.10.2026 (novaposhta.ua/for-business/additional-services/parcel-storage).
+     */
     public function freeStorageDays(): ?int
     {
         return match ($this) {
-            self::NovaPoshta => 7,
+            self::NovaPoshta => 5,
             self::Ukrposhta, self::Meest, self::Rozetka => null,
         };
     }
